@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Shield, Globe, Calendar, Star, ArrowRight, ChevronRight, Compass } from 'lucide-react';
 import PageWrapper from '../../components/layout/PageWrapper';
@@ -31,13 +31,6 @@ const HOW = [
 export default function HomePage() {
   const navigate = useNavigate();
   const [activeCity, setActiveCity] = useState(CITIES[0]);
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const fn = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', fn, { passive: true });
-    return () => window.removeEventListener('scroll', fn);
-  }, []);
 
   return (
     <PageWrapper hideNav={false}>
@@ -275,9 +268,9 @@ export default function HomePage() {
           </Link>
           <p className="text-xs text-ink-400">© 2025 Ride with Guide. All rights reserved.</p>
           <div className="flex items-center gap-4 text-xs text-ink-400">
-            <a href="#" className="hover:text-brand-500 transition-colors">Privacy</a>
-            <a href="#" className="hover:text-brand-500 transition-colors">Terms</a>
-            <a href="#" className="hover:text-brand-500 transition-colors">Support</a>
+            <a href="/privacy" className="hover:text-brand-500 transition-colors">Privacy</a>
+            <a href="/terms" className="hover:text-brand-500 transition-colors">Terms</a>
+            <a href="/support" className="hover:text-brand-500 transition-colors">Support</a>
           </div>
         </div>
       </footer>

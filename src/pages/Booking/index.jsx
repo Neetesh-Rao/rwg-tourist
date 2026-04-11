@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Clock, Plus, X, ChevronRight, ChevronLeft, Check, CreditCard, Shield, Zap, Star } from 'lucide-react';
+import { MapPin, Clock, Plus, X, ChevronRight, ChevronLeft, Check, Shield, Zap } from 'lucide-react';
 import {
   useAppDispatch, useBooking, useDraft, useEstimate, useSlots, useStep, useUser,
 } from '../../store';
@@ -19,7 +19,7 @@ import Badge from '../../components/common/Badge';
 import StarRating from '../../components/common/StarRating';
 import { Skeleton } from '../../components/common/Loader';
 import MapPicker from '../../components/map/MapPicker';
-import { CITIES, RIDE_TYPES, CITY_STOPS, LANGUAGES, PAYMENT_METHODS, UPI_APPS, getCityById } from '../../constants';
+import { CITIES, RIDE_TYPES, CITY_STOPS, LANGUAGES, PAYMENT_METHODS, UPI_APPS } from '../../constants';
 import { formatINR, getTomorrow } from '../../utils/helpers';
 
 const STEPS = ['Trip Details', 'Choose Guide', 'Your Stops', 'Review & Pay'];
@@ -75,7 +75,6 @@ function TripDetails() {
   function handleNext() {
     if (!form.city || !form.date || !form.pickupAddress) return;
     dispatch(updateDraft(form));
-    const city = getCityById(form.city);
     dispatch(fetchSlots({ city: form.city, date: form.date, startTime: form.startTime, endTime: form.endTime, genderPreference: form.genderPreference }));
     dispatch(estimatePrice({ cityId: form.city, rideTypeId: form.rideType, hoursBooked: selRT?.hours || 5 }));
     dispatch(setStep(2));
@@ -359,7 +358,6 @@ function ReviewPay() {
 
   const selRT = RIDE_TYPES.find(r => r.id === draft.rideType);
   const walletBalance = user?.walletBalance || 0;
-  const canPayWallet  = payMethod === 'wallet' && walletBalance >= (estimate?.advanceAmount || 0);
 
   async function handleConfirm() {
     const result = await dispatch(createBooking());

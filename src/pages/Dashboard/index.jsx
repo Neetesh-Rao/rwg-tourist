@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Compass, MapPin, Calendar, Award, ChevronRight, Zap, Star, Clock } from 'lucide-react';
+import { Compass, MapPin, Calendar, Award, ChevronRight, Zap, Star } from 'lucide-react';
 import { useAppDispatch, useUser, useBookings } from '../../store';
 import { loadMyBookings } from '../../store/slices/bookingSlice';
 import PageWrapper from '../../components/layout/PageWrapper';

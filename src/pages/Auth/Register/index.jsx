@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Phone, Globe, Eye, EyeOff, ChevronRight } from 'lucide-react';
+import { Mail, Lock, User, Phone, Eye, EyeOff, ChevronRight } from 'lucide-react';
 import { useAppDispatch, useAuth } from '../../../store';
 import { registerUser, clearError } from '../../../store/slices/authSlice';
 import AuthLayout from '../../../components/layout/AuthLayout';
