@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Navigation2, Clock, MapPin } from 'lucide-react';
+import { Navigation2, MapPin } from 'lucide-react';
 
 export default function LiveTracker({ booking, height = '400px' }) {
   const mapRef      = useRef(null);
   const mapInstance = useRef(null);
   const riderMarker = useRef(null);
-  const [riderPos,  setRiderPos]  = useState(null);
   const [elapsedKm, setElapsedKm] = useState(0);
   const animRef     = useRef(null);
 
@@ -58,16 +57,15 @@ export default function LiveTracker({ booking, height = '400px' }) {
       .addTo(map);
 
     // Draw route line
-    const routeLine = L.polyline(
+    L.polyline(
       [[pick.lat, pick.lng], [drop.lat, drop.lng]],
       { color: '#F59000', weight: 4, opacity: 0.7, dashArray: '10, 6' }
     ).addTo(map);
 
     // Animated rider along route
-   const startLat = booking.rider?.lat ?? (pick.lat + 0.01);
+    const startLat = booking.rider?.lat ?? (pick.lat + 0.01);
 const startLng = booking.rider?.lng ?? (pick.lng - 0.01);
     riderMarker.current = L.marker([startLat, startLng], { icon: carIcon }).addTo(map);
-    setRiderPos({ lat: startLat, lng: startLng });
 
     // Simulate movement toward pickup
     let progress = 0;
@@ -76,7 +74,6 @@ const startLng = booking.rider?.lng ?? (pick.lng - 0.01);
       const lat = startLat + (pick.lat - startLat) * progress;
       const lng = startLng + (pick.lng - startLng) * progress;
       riderMarker.current?.setLatLng([lat, lng]);
-      setRiderPos({ lat, lng });
       setElapsedKm(prev => Math.min(prev + 0.02, 3.5));
       if (progress < 1) animRef.current = requestAnimationFrame(animate);
     };

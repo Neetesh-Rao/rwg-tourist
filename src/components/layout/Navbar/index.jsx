@@ -1,7 +1,7 @@
 import React,{useState,useEffect}from'react';
 import{Link,useLocation,useNavigate}from'react-router-dom';
 import{MapPin,Sun,Moon,Menu,X,Bell,LogOut,Compass,Calendar,LayoutDashboard,Wallet}from'lucide-react';
-import{useAppDispatch,useAuth,useTheme,useUI}from'../../../store';
+import{useAppDispatch,useAuth,useTheme}from'../../../store';
 import{logout}from'../../../store/slices/authSlice';
 import{toggleTheme}from'../../../store/slices/uiWalletSlice';
 import Avatar from'../../common/Avatar';
@@ -20,7 +20,6 @@ export default function Navbar(){
   const location=useLocation();
   const{isAuthenticated,user}=useAuth();
   const theme=useTheme();
-  const{toasts}=useUI();
   const[scrolled,setScrolled]=useState(false);
   const[menu,setMenu]=useState(false);
   const[drop,setDrop]=useState(false);
