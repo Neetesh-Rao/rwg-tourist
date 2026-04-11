@@ -22,7 +22,7 @@
 "scripts": {
   "start": "react-scripts start",
   "dev": "react-scripts start",
- "build": "chmod +x node_modules/.bin/react-scripts && react-scripts build"
+ "build": "npx react-scripts build"
 },
   "eslintConfig": {
     "extends": [
