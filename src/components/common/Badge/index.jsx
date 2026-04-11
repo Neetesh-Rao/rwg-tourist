@@ -1,0 +1,6 @@
+import React from'react';
+export default function Badge({children,variant='neutral',size='sm',dot,className=''}){
+  const V={brand:'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 border border-brand-200 dark:border-brand-800/40',green:'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800/40',red:'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/40',amber:'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40',blue:'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40',purple:'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800/40',neutral:'bg-surface-2 dark:bg-surface-3 text-ink-600 dark:text-ink-400 border border-[var(--border)]'};
+  const S={xs:'text-[10px] px-2 py-0.5 rounded-full font-semibold',sm:'text-[11px] px-2.5 py-1 rounded-full font-semibold',md:'text-xs px-3 py-1.5 rounded-full font-semibold'};
+  return(<span className={`inline-flex items-center gap-1.5 ${V[variant]||V.neutral} ${S[size]||S.sm} ${className}`}>{dot&&<span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{background:dot}}/>}{children}</span>);
+}
