@@ -6,6 +6,7 @@ import { logout } from '../../../store/slices/authSlice';
 import { toggleTheme } from '../../../store/slices/uiWalletSlice';
 import Avatar from '../../common/Avatar';
 import Button from '../../common/Button';
+import logo from '../../../assets/logo.png';
 
 const LINKS = [
   { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
@@ -36,7 +37,7 @@ export default function Navbar() {
           <div className="h-16 flex items-center justify-between gap-4">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2.5 flex-shrink-0 group">
-              <img src="/image.png" alt="Ride With Guide" className="h-12 max-w-[160px] object-contain" />
+              <img src={logo} alt="Ride With Guide" className="h-12 max-w-[160px] object-contain" />
             </Link>
 
             {/* Desktop nav */}
