@@ -16,27 +16,27 @@ import {
   TrendingDown,
   Wallet as WIcon,
 } from 'lucide-react';
-import { useAppDispatch, useBookings, useUser, useAuth, useWallet } from '../store';
-import { loadMyBookings } from '../store/slices/bookingSlice';
-import { updateProfile } from '../store/slices/authSlice';
-import { addMoney, loadWalletTxns, pushToast } from '../store/slices/uiWalletSlice';
-import PageWrapper from '../components/layout/PageWrapper';
-import Button from '../components/common/Button';
-import Card from '../components/common/Card';
-import Badge from '../components/common/Badge';
-import EmptyState from '../components/common/EmptyState';
-import Input2 from '../components/common/Input';
-import Select2 from '../components/common/Select';
-import Avatar from '../components/common/Avatar';
-import Modal from '../components/common/Modal';
-import LiveTracker from '../components/map/LiveTracker';
+import { useAppDispatch, useBookings, useUser, useAuth, useWallet } from '@/app/store/store';
+import { loadMyBookings } from '@/features/booking/model/bookingSlice';
+import { updateProfile } from '@/features/auth/model/authSlice';
+import { addMoney, loadWalletTxns, pushToast } from '@/features/wallet/model/uiWalletSlice';
+import PageWrapper from '@/shared/layout/PageWrapper/PageWrapper';
+import Button from '@/shared/ui/Button/Button';
+import Card from '@/shared/ui/Card/Card';
+import Badge from '@/shared/ui/Badge/Badge';
+import EmptyState from '@/shared/ui/EmptyState/EmptyState';
+import Input2 from '@/shared/ui/Input/Input';
+import Select2 from '@/shared/ui/Select/Select';
+import Avatar from '@/shared/ui/Avatar/Avatar';
+import Modal from '@/shared/ui/Modal/Modal';
+import LiveTracker from '@/shared/map/LiveTracker/LiveTracker';
 import {
   BOOKING_STATUS,
   LANGUAGES as LANGS,
   NATIONALITIES as NATS,
   PAYMENT_METHODS as PM,
-} from '../constants';
-import { formatINR, formatDate } from '../utils/helpers';
+} from '@/shared/config/constants';
+import { formatINR, formatDate } from '@/shared/lib/helpers';
 
 function BookingDetail({ booking, onTrack }) {
   const cfg = BOOKING_STATUS[booking.status] || BOOKING_STATUS.pending;

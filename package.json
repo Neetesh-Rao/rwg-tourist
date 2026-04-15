@@ -11,23 +11,19 @@
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",
     "react-redux": "^9.1.0",
-    "react-router-dom": "^6.22.3",
-    "react-scripts": "5.0.1"
+    "react-router-dom": "^6.22.3"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.17",
     "postcss": "^8.4.35",
-    "tailwindcss": "^3.4.1"
+    "tailwindcss": "^3.4.1",
+    "vite": "^5.4.19"
   },
-"scripts": {
-  "start": "react-scripts start",
-  "dev": "react-scripts start",
-  "build": "node node_modules/react-scripts/bin/react-scripts.js build"
-},
-  "eslintConfig": {
-    "extends": [
-      "react-app"
-    ]
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "browserslist": {
     "production": [
