@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 import ToastContainer from '@/shared/ui/Toast/Toast';
+import logo from '../../../shared/assets/logo.png';
 
 export default function AuthLayout({ children, title, subtitle }) {
   return (
@@ -32,13 +33,11 @@ export default function AuthLayout({ children, title, subtitle }) {
         </div>
 
         {/* Logo */}
-        <div className="relative z-10">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-10 h-10 bg-brand-gradient rounded-2xl flex items-center justify-center shadow-brand">
-              <MapPin className="w-5 h-5 text-ink-900" strokeWidth={2.5} />
-            </div>
-            <span className="font-display font-bold text-white text-xl">Ride with Guide</span>
-          </Link>
+         <div className="relative z-10 flex items-center gap-3">
+          <img src={logo} alt="Ride with Guide" className="h-9 w-auto object-contain" />
+          <div className="pl-3 border-l border-white/20">
+            <p className="text-white text-[10px] uppercase tracking-widest font-bold mt-1">Tourist Panel</p>
+          </div>
         </div>
 
         {/* Bottom content */}
