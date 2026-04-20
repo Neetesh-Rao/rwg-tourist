@@ -13,7 +13,7 @@ export default function Modal({open,onClose,title,children,size='md',className='
       <div className={`relative card w-full ${W[size]||W.md} max-h-[90vh] overflow-y-auto animate-scale-in rounded-t-3xl sm:rounded-3xl ${className}`}>
         <div className="sm:hidden w-10 h-1 bg-ink-200 dark:bg-ink-700 rounded-full mx-auto mb-4"/>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-display text-lg font-bold text-ink-900 dark:text-ink-100">{title}</h2>
+          <h2 className="text-2xl font-extrabold tracking-tight text-ink-900 dark:text-ink-100">{title}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center text-ink-400 hover:text-ink-900 dark:hover:text-ink-100 hover:bg-surface-2 dark:hover:bg-surface-3 transition-colors text-sm font-bold">✕</button>
         </div>
         {children}
