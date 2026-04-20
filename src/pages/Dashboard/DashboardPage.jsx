@@ -35,27 +35,31 @@ function BookingCard({ booking }) {
         <MapPin className="w-3.5 h-3.5 text-brand-400 flex-shrink-0" />
         <span className="truncate">{booking.pickupAddress}</span>
       </div>
+
       {booking.estimatedPrice && (
         <div className="mt-3 pt-3 border-t border-[var(--border)] flex justify-between items-center">
           <span className="text-xs text-ink-400">Est. total</span>
           <span className="text-sm font-mono font-bold text-ink-900 dark:text-ink-100">
             {formatINR(booking.estimatedPrice.estimatedMin)}–{formatINR(booking.estimatedPrice.estimatedMax)}
           </span>
+          
+
         </div>
+        
       )}
     </Card>
   );
 }
 
 export default function DashboardPage() {
-  const navigate  = useNavigate();
-  const dispatch  = useAppDispatch();
-  const user      = useUser();
-  const bookings  = useBookings();
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const user = useUser();
+  const bookings = useBookings();
 
   useEffect(() => { dispatch(loadMyBookings()); }, [dispatch]);
 
-  const upcoming  = bookings.filter(b => ['confirmed','pending'].includes(b.status));
+  const upcoming = bookings.filter(b => ['confirmed', 'pending'].includes(b.status));
   const completed = bookings.filter(b => b.status === 'completed');
 
   const stats = [
@@ -104,9 +108,9 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
           {[
             { label: 'Book Tour', icon: <Compass className="w-5 h-5" />, to: '/book', color: 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 border-brand-200 dark:border-brand-800/40 hover:bg-brand-100 dark:hover:bg-brand-900/30' },
-            { label: 'My Trips',  icon: <Calendar className="w-5 h-5" />, to: '/bookings', color: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800/40 hover:bg-blue-100' },
-            { label: 'Wallet',    icon: <Zap className="w-5 h-5" />, to: '/wallet', color: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800/40 hover:bg-green-100' },
-            { label: 'Profile',   icon: <Star className="w-5 h-5" />, to: '/profile', color: 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800/40 hover:bg-purple-100' },
+            { label: 'My Trips', icon: <Calendar className="w-5 h-5" />, to: '/bookings', color: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800/40 hover:bg-blue-100' },
+            { label: 'Wallet', icon: <Zap className="w-5 h-5" />, to: '/wallet', color: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800/40 hover:bg-green-100' },
+            { label: 'Profile', icon: <Star className="w-5 h-5" />, to: '/profile', color: 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800/40 hover:bg-purple-100' },
           ].map(a => (
             <Link key={a.to} to={a.to}>
               <div className={`flex flex-col items-center gap-2 p-4 rounded-2xl border cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-md ${a.color}`}>
