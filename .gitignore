@@ -1,5 +1,5 @@
 config.bat
 node_modules/
 build/
-.env
+.env/
 build
