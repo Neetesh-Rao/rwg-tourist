@@ -15,6 +15,8 @@ import {
   TrendingUp,
   TrendingDown,
   Wallet as WIcon,
+  ChevronDown,
+  MessageCircle,
 } from 'lucide-react';
 import { useAppDispatch, useBookings, useUser, useAuth, useWallet } from '@/app/store/store';
 import { loadMyBookings } from '@/features/booking/model/bookingSlice';
@@ -38,13 +40,14 @@ import {
 } from '@/shared/config/constants';
 import { formatINR, formatDate } from '@/shared/lib/helpers';
 
-function BookingDetail({ booking, onTrack }) {
+function BookingDetail({ booking, onTrack,onClick }) {
+    const navigate = useNavigate();
   const cfg = BOOKING_STATUS[booking.status] || BOOKING_STATUS.pending;
   const bvar = { brand: 'brand', green: 'green', red: 'red', amber: 'amber', neutral: 'neutral' }[cfg.color] || 'neutral';
 
   return (
-    <Card className="!p-5 animate-fade-up">
-      <div className="flex items-start justify-between gap-3 mb-4">
+    <Card className="!p-5 animate-fade-up" onClick={onClick} style={{cursor: 'pointer'}}>
+      <div className="flex items-start justify-between gap-3 mb-4" >
         <div>
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <h3 className="font-display text-base font-bold text-ink-900 dark:text-ink-100">{booking.city}</h3>
@@ -72,14 +75,166 @@ function BookingDetail({ booking, onTrack }) {
       {booking.estimatedPrice && (
         <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between flex-wrap gap-2">
           <span className="text-xs text-ink-400">Est. total: <span className="font-mono font-bold text-ink-800 dark:text-ink-200">{formatINR(booking.estimatedPrice.estimatedMin)}-{formatINR(booking.estimatedPrice.estimatedMax)}</span></span>
-          {['confirmed', 'in_progress'].includes(booking.status) && (
-            <Button variant="primary" size="sm" onClick={() => onTrack(booking)} icon={<Navigation2 className="w-3.5 h-3.5" />}>
+          {/* {['confirmed', 'in_progress'].includes(booking.status) && (
+            <Button variant="primary" size="sm" onClick={() => onTrack(booking)} icon={<Navigation2 className="w-3.5 h-3.5" />} disabled> 
               Track ride
             </Button>
-          )}
+          )} */}
         </div>
       )}
     </Card>
+  );
+}
+
+function VerticalStepper({ booking, onClose }) {
+  const navigate = useNavigate();
+  const [showRiderDetails, setShowRiderDetails] = useState(false);
+  
+  let activeStep = 0;
+  let isCancelled = booking.status === 'cancelled';
+  if(isCancelled) activeStep = 1;
+  else if(booking.status === 'pending') activeStep = 1;
+  else if(['confirmed', 'in_progress'].includes(booking.status)) activeStep = 3;
+  else if(booking.status === 'completed') activeStep = 4;
+
+  const steps = [
+    { 
+      label: 'Booking & Payment',
+      description: `Request placed for ${booking.city} on ${formatDate(booking.date)}. Paid ${formatINR(booking.estimatedPrice?.advanceAmount || 0)} advance.`,
+    },
+    {
+      label: 'Admin Approval',
+      description: isCancelled ? 'Your booking was cancelled.' : booking.status === 'pending' ? 'Verifying details and finding the best match...' : 'Booking approved by admin.',
+      isError: isCancelled
+    },
+    {
+      label: 'Guide Assignment',
+      description: booking.rider ? `Assigned to ${booking.rider.name}.` : 'Matching you with a verified guide...',
+    },
+    {
+      label: 'Ride Details',
+      description: booking.status === 'completed' ? 'Your ride was successfully completed!' : (booking.status === 'confirmed' || booking.status === 'in_progress') ? 'Your guide is ready. View details below.' : 'Awaiting confirmation.',
+      content: (booking.status === 'confirmed' || booking.status === 'in_progress') ? (
+        <div className="space-y-3 mt-3 bg-surface-2 dark:bg-surface-3 p-4 rounded-2xl border border-[var(--border)] overflow-hidden relative">
+          
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/30 flex flex-shrink-0 items-center justify-center">
+              <User className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+            </div>
+            <div>
+              <p className="font-semibold text-ink-900 dark:text-ink-100 text-sm">Guide Assigned</p>
+              <p className="text-xs text-ink-500 mt-0.5 w-[200px] whitespace-nowrap overflow-hidden text-ellipsis">Say hi to {booking.rider?.name?.split(' ')[0] || 'your guide'}! Check details below.</p>
+            </div>
+          </div>
+
+          <button 
+            onClick={() => setShowRiderDetails(!showRiderDetails)}
+            className="w-full flex items-center justify-between py-2.5 mt-1 border-y border-[var(--border)] text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 hover:text-brand-500 transition-colors"
+          >
+            <span>{showRiderDetails ? 'Hide Guide Profile' : 'View Guide Profile'}</span>
+            <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showRiderDetails ? 'rotate-180' : ''}`} />
+          </button>
+
+          <div className={`transition-all duration-300 overflow-hidden ${showRiderDetails ? 'max-h-[700px] opacity-100 py-3' : 'max-h-0 opacity-0'}`}>
+            <div className="space-y-5">
+              
+              {/* Rich Contact Card */}
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand-100 to-brand-200 dark:from-brand-900/30 dark:to-brand-800/20 flex flex-shrink-0 items-center justify-center font-display text-xl font-bold text-brand-700 dark:text-brand-400">
+                    {booking.rider?.name?.charAt(0) || 'G'}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-ink-900 dark:text-ink-100 text-sm flex items-center gap-1.5">
+                      {booking.rider?.name || 'Assigned Guide'}
+                      {booking.rider?.rating && <span className="text-[10px] font-bold text-brand-500 bg-brand-50 border border-brand-200 dark:bg-brand-900/40 dark:border-brand-800/50 px-1 py-0.5 rounded">★ {booking.rider.rating}</span>}
+                    </p>
+                    <p className="text-xs text-ink-500 font-mono mt-0.5 tracking-wide">{booking.rider?.phone || '+91 98765 43210'}</p>
+                    <p className="text-[11px] text-ink-400 font-medium mt-1 uppercase tracking-wider">{booking.rider?.vehicleType || 'Vehicle'} • {booking.rider?.vehicleNumber || 'XXXX'}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <button className="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/20 flex flex-shrink-0 items-center justify-center text-brand-600 dark:text-brand-400 hover:text-brand-700 transition-colors border border-brand-200 dark:border-brand-800/40 shadow-sm" title="Message Guide">
+                    <MessageCircle className="w-4 h-4" />
+                  </button>
+                  <button className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 flex flex-shrink-0 items-center justify-center text-green-600 dark:text-green-400 hover:text-green-700 transition-colors border border-green-200 dark:border-green-800/40 shadow-sm" title="Call Guide">
+                    <Phone className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="px-1">
+                <p className="text-[#a1a1aa] text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] mb-2">About Guide</p>
+                <p className="text-sm text-ink-700 dark:text-ink-300 leading-relaxed font-medium">{booking.rider?.bio || 'A verified local expert ready to show you the best of the city.'}</p>
+              </div>
+              <div className="flex flex-wrap gap-x-6 gap-y-4 px-1">
+                <div>
+                  <p className="text-[#a1a1aa] text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] mb-2">Languages</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {booking.rider?.languages?.map((l) => <Badge key={l} variant="neutral" size="xs">{l}</Badge>) || <span className="text-sm">English, Hindi</span>}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[#a1a1aa] text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] mb-2">Expertise</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {booking.rider?.guideExpertise?.map((e) => <Badge key={e} variant="brand" size="xs">{e}</Badge>) || <span className="text-sm text-ink-500">-</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {booking.otp && (
+            <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 py-2.5 rounded-xl text-green-700 dark:text-green-400 text-sm border border-green-200 dark:border-green-800/40">
+              <Shield className="w-4 h-4 flex-shrink-0" /> <span className="font-medium">Pick-up OTP:</span> <span className="font-mono font-bold tracking-widest">{booking.otp}</span>
+            </div>
+          )}
+          <Button variant="primary" fullWidth onClick={() => { onClose(); navigate('/tracking', { state: { booking } }); }} icon={<Navigation2 className="w-4 h-4"/>}>
+            Track Ride
+          </Button>
+        </div>
+      ) : null
+    }
+  ];
+
+  return (
+    <div className="px-1 py-1 sm:p-2 sm:px-3 text-left">
+      {steps.map((step, index) => {
+        const isCompleted = index < activeStep;
+        const isActive = index === activeStep;
+        const isError = step.isError;
+        
+        return (
+          <div key={index} className="flex gap-4">
+            <div className="flex flex-col items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center border shrink-0 transition-all duration-300 ${
+                isCompleted ? 'bg-green-50 border-green-500 text-green-600 dark:bg-green-900/20 dark:text-green-400' :
+                isActive && !isError ? 'bg-brand-50 border-brand-500 text-brand-600 dark:bg-brand-900/20 dark:text-brand-400 ring-4 ring-brand-100 dark:ring-brand-900/30' :
+                isError ? 'bg-red-50 border-red-500 text-red-600 dark:bg-red-900/20 dark:text-red-400' :
+                'bg-[var(--surface)] border-ink-300 text-ink-400 dark:border-[var(--border)] dark:text-ink-500'
+              }`}>
+                {isCompleted ? <Check className="w-4 h-4" /> : <span className="text-sm font-bold">{index + 1}</span>}
+              </div>
+              {index < steps.length - 1 && (
+                <div className={`w-0.5 h-full min-h-[32px] my-1 rounded transition-colors ${isCompleted ? 'bg-green-500' : 'bg-[var(--border-strong)]'}`} />
+              )}
+            </div>
+            
+            <div className="pb-7 w-full flex-1 pt-1.5">
+              <h3 className={`font-semibold text-sm sm:text-base leading-none mb-1.5 ${isError ? 'text-red-600 dark:text-red-400' : isActive ? 'text-brand-600 dark:text-brand-400 font-bold' : isCompleted ? 'text-ink-900 dark:text-ink-100' : 'text-ink-400 dark:text-ink-500'}`}>
+                {step.label}
+              </h3>
+              <p className={`text-xs sm:text-sm leading-relaxed ${isActive && !isError ? 'text-ink-700 dark:text-ink-300' : 'text-ink-500'}`}>
+                {step.description}
+              </p>
+              {step.content && (isActive || isCompleted) && (
+                <div className="mt-3 animate-fade-in">{step.content}</div>
+              )}
+            </div>
+          </div>
+        )
+      })}
+    </div>
   );
 }
 
@@ -89,6 +244,7 @@ export function BookingsPage() {
   const dispatch = useAppDispatch();
   const bookings = useBookings();
   const [filter, setFilter] = useState('all');
+  const [selectedBooking, setSelectedBooking] = useState(null);
   const [success, setSuccess] = useState(location.search.includes('success=true'));
 
   useEffect(() => {
@@ -145,10 +301,20 @@ export function BookingsPage() {
           />
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
-            {filtered.map((b) => <BookingDetail key={b.id} booking={b} onTrack={(trackBooking) => navigate('/tracking', { state: { booking: trackBooking } })} />)}
+            {filtered.map((b) => <BookingDetail key={b.id} booking={b} onTrack={(trackBooking) => navigate('/tracking', { state: { booking: trackBooking } })} onClick={()=>setSelectedBooking(b)} />)}
           </div>
         )}
       </div>
+      <Modal
+  open={!!selectedBooking}
+  onClose={() => setSelectedBooking(null)}
+  title="Ride Progres"
+  className='p-5'
+>
+  {selectedBooking && (
+    <VerticalStepper booking={selectedBooking} onClose={() => setSelectedBooking(null)} />
+  )}
+</Modal>
     </PageWrapper>
   );
 }
