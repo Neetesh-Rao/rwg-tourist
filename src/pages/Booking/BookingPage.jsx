@@ -22,7 +22,7 @@ import MapPicker from '@/shared/map/MapPicker/MapPicker';
 import { CITIES, RIDE_TYPES, CITY_STOPS, LANGUAGES, PAYMENT_METHODS, UPI_APPS } from '@/shared/config/constants';
 import { formatINR, getTomorrow } from '@/shared/lib/helpers';
 
-const STEPS = ['Trip Details', 'Choose Guide', 'Your Stops', 'Review & Pay'];
+const STEPS = ['Trip Details', 'Your Stops', 'Review & Pay'];
 
 // ── Step indicator ─────────────────────────────────────
 function StepBar({ current }) {
@@ -154,7 +154,7 @@ function TripDetails() {
 
       <div className="flex justify-end pt-2">
         <Button variant="primary" size="lg" onClick={handleNext} disabled={!form.city || !form.date || !form.pickupAddress} iconRight={<ChevronRight className="w-4 h-4" />}>
-          Find available guides
+          Add Stops
         </Button>
       </div>
     </div>
@@ -162,97 +162,97 @@ function TripDetails() {
 }
 
 // ── Step 2: Choose Guide ───────────────────────────────
-function ChooseGuide() {
-  const dispatch = useAppDispatch();
-  const slots    = useSlots();
-  const estimate = useEstimate();
-  const { isLoading } = useBooking();
-  const [selId, setSelId] = useState('');
+// function ChooseGuide() {
+//   const dispatch = useAppDispatch();
+//   const slots    = useSlots();
+//   const estimate = useEstimate();
+//   const { isLoading } = useBooking();
+//   const [selId, setSelId] = useState('');
 
-  function handleNext() {
-    if (!selId) return;
-    const slot = slots.find(s => s.id === selId);
-    dispatch(selectSlot(slot));
-    dispatch(updateDraft({ selectedSlotId: selId }));
-    dispatch(setStep(3));
-  }
+//   function handleNext() {
+//     if (!selId) return;
+//     const slot = slots.find(s => s.id === selId);
+//     dispatch(selectSlot(slot));
+//     dispatch(updateDraft({ selectedSlotId: selId }));
+//     dispatch(setStep(3));
+//   }
 
-  if (isLoading) return (
-    <div className="space-y-4">
-      {[1,2,3].map(i => <Skeleton key={i} className="h-48 rounded-2xl" style={{ animationDelay: `${i*100}ms` }} />)}
-    </div>
-  );
+//   if (isLoading) return (
+//     <div className="space-y-4">
+//       {[1,2,3].map(i => <Skeleton key={i} className="h-48 rounded-2xl" style={{ animationDelay: `${i*100}ms` }} />)}
+//     </div>
+//   );
 
-  return (
-    <div className="space-y-4 animate-fade-up">
-      {/* Price banner */}
-      {estimate && (
-        <Card className="!p-4 border-brand-200 dark:border-brand-800/40 bg-brand-50/60 dark:bg-brand-900/10">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <p className="text-xs text-brand-600 dark:text-brand-400 font-semibold uppercase tracking-wider mb-1">Estimated price range</p>
-              <p className="font-display text-2xl font-bold text-gradient">{formatINR(estimate.estimatedMin)} – {formatINR(estimate.estimatedMax)}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-ink-400 mb-0.5">Pay now (30% advance)</p>
-              <p className="font-display text-xl font-bold text-brand-600 dark:text-brand-400">{formatINR(estimate.advanceAmount)}</p>
-            </div>
-          </div>
-        </Card>
-      )}
+//   return (
+//     <div className="space-y-4 animate-fade-up">
+//       {/* Price banner */}
+//       {estimate && (
+//         <Card className="!p-4 border-brand-200 dark:border-brand-800/40 bg-brand-50/60 dark:bg-brand-900/10">
+//           <div className="flex items-center justify-between flex-wrap gap-3">
+//             <div>
+//               <p className="text-xs text-brand-600 dark:text-brand-400 font-semibold uppercase tracking-wider mb-1">Estimated price range</p>
+//               <p className="font-display text-2xl font-bold text-gradient">{formatINR(estimate.estimatedMin)} – {formatINR(estimate.estimatedMax)}</p>
+//             </div>
+//             <div className="text-right">
+//               <p className="text-xs text-ink-400 mb-0.5">Pay now (30% advance)</p>
+//               <p className="font-display text-xl font-bold text-brand-600 dark:text-brand-400">{formatINR(estimate.advanceAmount)}</p>
+//             </div>
+//           </div>
+//         </Card>
+//       )}
 
-      {/* Guide cards */}
-      {slots.map(slot => (
-        <div key={slot.id} onClick={() => setSelId(slot.id)}
-          className={`card !p-5 cursor-pointer transition-all duration-250 ${selId === slot.id ? 'card-selected' : 'card-active'}`}>
-          {selId === slot.id && (
-            <div className="absolute top-4 right-4 w-6 h-6 bg-brand-500 rounded-full flex items-center justify-center">
-              <Check className="w-3.5 h-3.5 text-white" />
-            </div>
-          )}
-          <div className="flex items-start gap-4">
-            <div className="relative flex-shrink-0">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-100 to-brand-200 dark:from-brand-900/30 dark:to-brand-800/20 flex items-center justify-center font-display text-2xl font-bold text-brand-700 dark:text-brand-400">
-                {slot.rider.name.charAt(0)}
-              </div>
-              <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[var(--surface)] ${slot.rider.isOnline ? 'bg-green-500' : 'bg-ink-300 dark:bg-ink-600'}`} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <h3 className="font-semibold text-ink-900 dark:text-ink-100">{slot.rider.name}</h3>
-                <Badge variant={slot.rider.gender === 'female' ? 'brand' : 'neutral'}>{slot.rider.gender === 'female' ? '♀ Female' : '♂ Male'}</Badge>
-                {slot.rider.isOnline && <Badge variant="green">Online</Badge>}
-              </div>
-              <StarRating rating={slot.rider.rating} count={slot.rider.totalRides} />
-              <p className="text-xs text-ink-500 mt-2 line-clamp-2">{slot.rider.bio}</p>
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {slot.rider.languages.map(l => <Badge key={l} variant="neutral" size="xs">{l}</Badge>)}
-              </div>
-              <div className="flex flex-wrap gap-1.5 mt-1.5">
-                {slot.rider.guideExpertise.map(e => <Badge key={e} variant="blue" size="xs">{e}</Badge>)}
-              </div>
-            </div>
-            <div className="text-right flex-shrink-0">
-              <p className="text-sm font-bold text-ink-900 dark:text-ink-100">{formatINR(slot.rider.pricePerHour)}<span className="text-xs text-ink-400 font-normal">/hr</span></p>
-              <p className="text-xs text-ink-400 mt-0.5">₹{slot.rider.pricePerKm}/km</p>
-            </div>
-          </div>
-          <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between text-xs text-ink-400">
-            <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {slot.startTime}–{slot.endTime} · {slot.rider.vehicleType}</span>
-            <span>{slot.rider.completionRate}% completion</span>
-          </div>
-        </div>
-      ))}
+//       {/* Guide cards */}
+//       {slots.map(slot => (
+//         <div key={slot.id} onClick={() => setSelId(slot.id)}
+//           className={`card !p-5 cursor-pointer transition-all duration-250 ${selId === slot.id ? 'card-selected' : 'card-active'}`}>
+//           {selId === slot.id && (
+//             <div className="absolute top-4 right-4 w-6 h-6 bg-brand-500 rounded-full flex items-center justify-center">
+//               <Check className="w-3.5 h-3.5 text-white" />
+//             </div>
+//           )}
+//           <div className="flex items-start gap-4">
+//             <div className="relative flex-shrink-0">
+//               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-100 to-brand-200 dark:from-brand-900/30 dark:to-brand-800/20 flex items-center justify-center font-display text-2xl font-bold text-brand-700 dark:text-brand-400">
+//                 {slot.rider.name.charAt(0)}
+//               </div>
+//               <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[var(--surface)] ${slot.rider.isOnline ? 'bg-green-500' : 'bg-ink-300 dark:bg-ink-600'}`} />
+//             </div>
+//             <div className="flex-1 min-w-0">
+//               <div className="flex items-center gap-2 flex-wrap mb-1">
+//                 <h3 className="font-semibold text-ink-900 dark:text-ink-100">{slot.rider.name}</h3>
+//                 <Badge variant={slot.rider.gender === 'female' ? 'brand' : 'neutral'}>{slot.rider.gender === 'female' ? '♀ Female' : '♂ Male'}</Badge>
+//                 {slot.rider.isOnline && <Badge variant="green">Online</Badge>}
+//               </div>
+//               <StarRating rating={slot.rider.rating} count={slot.rider.totalRides} />
+//               <p className="text-xs text-ink-500 mt-2 line-clamp-2">{slot.rider.bio}</p>
+//               <div className="flex flex-wrap gap-1.5 mt-2">
+//                 {slot.rider.languages.map(l => <Badge key={l} variant="neutral" size="xs">{l}</Badge>)}
+//               </div>
+//               <div className="flex flex-wrap gap-1.5 mt-1.5">
+//                 {slot.rider.guideExpertise.map(e => <Badge key={e} variant="blue" size="xs">{e}</Badge>)}
+//               </div>
+//             </div>
+//             <div className="text-right flex-shrink-0">
+//               <p className="text-sm font-bold text-ink-900 dark:text-ink-100">{formatINR(slot.rider.pricePerHour)}<span className="text-xs text-ink-400 font-normal">/hr</span></p>
+//               <p className="text-xs text-ink-400 mt-0.5">₹{slot.rider.pricePerKm}/km</p>
+//             </div>
+//           </div>
+//           <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between text-xs text-ink-400">
+//             <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {slot.startTime}–{slot.endTime} · {slot.rider.vehicleType}</span>
+//             <span>{slot.rider.completionRate}% completion</span>
+//           </div>
+//         </div>
+//       ))}
 
-      <div className="flex justify-between pt-2">
-        <Button variant="ghost" onClick={() => dispatch(setStep(1))} icon={<ChevronLeft className="w-4 h-4" />}>Back</Button>
-        <Button variant="primary" size="lg" disabled={!selId} onClick={handleNext} iconRight={<ChevronRight className="w-4 h-4" />}>Continue</Button>
-      </div>
-    </div>
-  );
-}
+//       <div className="flex justify-between pt-2">
+//         <Button variant="ghost" onClick={() => dispatch(setStep(1))} icon={<ChevronLeft className="w-4 h-4" />}>Back</Button>
+//         <Button variant="primary" size="lg" disabled={!selId} onClick={handleNext} iconRight={<ChevronRight className="w-4 h-4" />}>Continue</Button>
+//       </div>
+//     </div>
+//   );
+// }
 
-// ── Step 3: Add Stops ──────────────────────────────────
+// ── Step 2: Add Stops ──────────────────────────────────
 function AddStops() {
   const dispatch = useAppDispatch();
   const draft    = useDraft();
@@ -338,14 +338,14 @@ function AddStops() {
         value={draft.specialRequests || ''} onChange={e => dispatch(updateDraft({ specialRequests: e.target.value }))} />
 
       <div className="flex justify-between pt-2">
-        <Button variant="ghost" onClick={() => dispatch(setStep(2))} icon={<ChevronLeft className="w-4 h-4" />}>Back</Button>
-        <Button variant="primary" size="lg" onClick={() => dispatch(setStep(4))} iconRight={<ChevronRight className="w-4 h-4" />}>Review booking</Button>
+        <Button variant="ghost" onClick={() => dispatch(setStep(1))} icon={<ChevronLeft className="w-4 h-4" />}>Back</Button>
+        <Button variant="primary" size="lg" onClick={() => dispatch(setStep(3))} iconRight={<ChevronRight className="w-4 h-4" />}>Review booking</Button>
       </div>
     </div>
   );
 }
 
-// ── Step 4: Review & Pay ───────────────────────────────
+// ── Step 3: Review & Pay ───────────────────────────────
 function ReviewPay() {
   const dispatch  = useAppDispatch();
   const navigate  = useNavigate();
@@ -482,7 +482,7 @@ function ReviewPay() {
       </p>
 
       <div className="flex justify-between gap-3 pt-1">
-        <Button variant="ghost" onClick={() => dispatch(setStep(3))} icon={<ChevronLeft className="w-4 h-4" />}>Back</Button>
+        <Button variant="ghost" onClick={() => dispatch(setStep(2))} icon={<ChevronLeft className="w-4 h-4" />}>Back</Button>
         <Button variant="primary" size="lg" loading={isLoading} onClick={handleConfirm} className="flex-1"
           iconRight={<Check className="w-4 h-4" />}>
           Confirm & Pay {estimate ? formatINR(estimate.advanceAmount) : '…'}
@@ -499,7 +499,7 @@ export default function BookingPage() {
 
   useEffect(() => { dispatch(resetWizard()); }, [dispatch]);
 
-  const stepContent = [<TripDetails />, <ChooseGuide />, <AddStops />, <ReviewPay />];
+  const stepContent = [<TripDetails />, <AddStops />, <ReviewPay />];
 
   return (
     <PageWrapper>
