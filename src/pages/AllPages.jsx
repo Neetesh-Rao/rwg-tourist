@@ -69,17 +69,37 @@ function BookingDetail({ booking, onTrack,onClick }) {
             <Shield className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
             <span className="font-mono font-bold text-green-700 dark:text-green-400 text-sm">Ride OTP: {booking.otp}</span>
           </div>
+          
         )}
+        
       </div>
 
       {booking.estimatedPrice && (
-        <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between flex-wrap gap-2">
+        <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between flex-wrap gap-2 mb-3">
           <span className="text-xs text-ink-400">Est. total: <span className="font-mono font-bold text-ink-800 dark:text-ink-200">{formatINR(booking.estimatedPrice.estimatedMin)}-{formatINR(booking.estimatedPrice.estimatedMax)}</span></span>
-          {/* {['confirmed', 'in_progress'].includes(booking.status) && (
-            <Button variant="primary" size="sm" onClick={() => onTrack(booking)} icon={<Navigation2 className="w-3.5 h-3.5" />} disabled> 
-              Track ride
-            </Button>
-          )} */}
+        </div>
+      )}
+
+      {['confirmed', 'in_progress', 'pending'].includes(booking.status) && (
+        <div className="flex items-center gap-2 w-full pt-1">
+          <Button 
+            className="flex-1" 
+            variant="primary" 
+            size="sm" 
+            disabled={booking.status === 'pending'}
+            onClick={(e) => { e.stopPropagation(); onTrack(booking); }} 
+            icon={<Navigation2 className="w-3.5 h-3.5"/>}
+          >
+            Track Ride
+          </Button>
+          <Button 
+            className="flex-1 !border-red-200 !text-red-500 hover:!bg-red-50 dark:!border-red-800/40 dark:!text-red-400 dark:hover:!bg-red-900/20 transition-colors" 
+            variant="secondary" 
+            size="sm" 
+            onClick={(e) => { e.stopPropagation(); /* Cancel logic placeholder */ }} 
+          >
+            Cancel Ride
+          </Button>
         </div>
       )}
     </Card>
