@@ -1,6 +1,6 @@
 import React,{useEffect,useCallback}from'react';
 import{useAppDispatch,useUI}from'@/app/store/store';
-import{popToast}from'@/features/wallet/model/uiWalletSlice';
+import{popToast}from'@/app/store/slices/uiWalletSlice';
 
 function ToastItem({toast}){
   const dispatch=useAppDispatch();

@@ -14,14 +14,16 @@ import {
   Plus as PlusIcon,
   TrendingUp,
   TrendingDown,
-  Wallet as WIcon,
   ChevronDown,
   MessageCircle,
+  Info,
 } from 'lucide-react';
 import { useAppDispatch, useBookings, useUser, useAuth, useWallet } from '@/app/store/store';
-import { loadMyBookings } from '@/features/booking/model/bookingSlice';
-import { updateProfile } from '@/features/auth/model/authSlice';
-import { addMoney, loadWalletTxns, pushToast } from '@/features/wallet/model/uiWalletSlice';
+import { loadMyBookings, setBookings } from '@/app/store/slices/bookingSlice';
+import { setAuthSession } from '@/app/store/slices/authSlice';
+import { useGetProfileQuery, useUpdateProfileMutation } from '@/app/store/slices/authApi';
+import { pushToast } from '@/app/store/slices/uiWalletSlice';
+import { useGetPaymentHistoryQuery } from '@/app/store/slices/paymentApi';
 import PageWrapper from '@/shared/layout/PageWrapper/PageWrapper';
 import Button from '@/shared/ui/Button/Button';
 import Card from '@/shared/ui/Card/Card';
@@ -39,13 +41,48 @@ import {
   PAYMENT_METHODS as PM,
 } from '@/shared/config/constants';
 import { formatINR, formatDate } from '@/shared/lib/helpers';
+import { useGetBookingsQuery } from '@/app/store/slices/bookingApi';
+
+const PROFILE_GENDER_OPTIONS = [
+  { value: 'Male', label: 'Male' },
+  { value: 'Female', label: 'Female' },
+  { value: 'Prefer_not_to_say', label: 'Prefer not to say' },
+];
+
+const normalizeBookingStatus = (status) => {
+  if (status === 'booked') return 'pending';
+  if (status === 'in_progress') return 'ongoing';
+  return status || 'pending';
+};
+
+const normalizeBooking = (booking) => ({
+  ...booking,
+  id: booking?._id || booking?.id,
+  city: booking?.city || '',
+  date: booking?.date || '',
+  startTime: booking?.startTime || '',
+  endTime: booking?.endTime || booking?.durationType || '',
+  pickupAddress: booking?.pickupLocation?.address || booking?.pickupAddress || '',
+  pickupLat: booking?.pickupLocation?.lat || booking?.pickupLat || null,
+  pickupLng: booking?.pickupLocation?.lng || booking?.pickupLng || null,
+  stops: booking?.stops || [],
+  status: normalizeBookingStatus(booking?.status),
+  rider: booking?.rider || booking?.guide || null,
+  estimatedPrice: booking?.pricing ? {
+    estimatedMin: booking.pricing?.estimatedRange?.min || 0,
+    estimatedMax: booking.pricing?.estimatedRange?.max || 0,
+    advanceAmount: booking.pricing?.advanceAmount || 0,
+  } : booking?.estimatedPrice || null,
+});
 
 function BookingDetail({ booking, onTrack,onClick }) {
     const navigate = useNavigate();
+  const [showPricingDetails, setShowPricingDetails] = useState(false);
   const cfg = BOOKING_STATUS[booking.status] || BOOKING_STATUS.pending;
   const bvar = { brand: 'brand', green: 'green', red: 'red', amber: 'amber', neutral: 'neutral' }[cfg.color] || 'neutral';
 
   return (
+    <>
     <Card className="!p-5 animate-fade-up" onClick={onClick} style={{cursor: 'pointer'}}>
       <div className="flex items-start justify-between gap-3 mb-4" >
         <div>
@@ -77,10 +114,17 @@ function BookingDetail({ booking, onTrack,onClick }) {
       {booking.estimatedPrice && (
         <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between flex-wrap gap-2 mb-3">
           <span className="text-xs text-ink-400">Est. total: <span className="font-mono font-bold text-ink-800 dark:text-ink-200">{formatINR(booking.estimatedPrice.estimatedMin)}-{formatINR(booking.estimatedPrice.estimatedMax)}</span></span>
+          <button 
+            onClick={(e) => { e.stopPropagation(); setShowPricingDetails(true); }}
+            className="text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors"
+            title="View pricing breakdown"
+          >
+            <Info className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      {['confirmed', 'in_progress', 'pending'].includes(booking.status) && (
+      {['confirmed', 'ongoing', 'pending'].includes(booking.status) && (
         <div className="flex items-center gap-2 w-full pt-1">
           <Button 
             className="flex-1" 
@@ -103,6 +147,74 @@ function BookingDetail({ booking, onTrack,onClick }) {
         </div>
       )}
     </Card>
+
+    {showPricingDetails && (
+      <Modal isOpen={showPricingDetails} onClose={() => setShowPricingDetails(false)}>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 pb-4 border-b border-[var(--border)]">
+            <Info className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+            <h2 className="text-lg font-display font-bold text-ink-900 dark:text-ink-100">Pricing Breakdown</h2>
+          </div>
+
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-surface-2 dark:bg-surface-3 p-3 rounded-lg">
+                <p className="text-xs text-ink-400 mb-1">Base Fare</p>
+                <p className="font-mono font-bold text-ink-900 dark:text-ink-100">{formatINR(booking.estimatedPrice?.baseFare || 0)}</p>
+              </div>
+              <div className="bg-surface-2 dark:bg-surface-3 p-3 rounded-lg">
+                <p className="text-xs text-ink-400 mb-1">Distance Cost</p>
+                <p className="font-mono font-bold text-ink-900 dark:text-ink-100">{formatINR(booking.estimatedPrice?.distanceCost || 0)}</p>
+              </div>
+              <div className="bg-surface-2 dark:bg-surface-3 p-3 rounded-lg">
+                <p className="text-xs text-ink-400 mb-1">Time Charge</p>
+                <p className="font-mono font-bold text-ink-900 dark:text-ink-100">{formatINR(booking.estimatedPrice?.timeCharge || 0)}</p>
+              </div>
+              <div className="bg-surface-2 dark:bg-surface-3 p-3 rounded-lg">
+                <p className="text-xs text-ink-400 mb-1">Guide Service Fee</p>
+                <p className="font-mono font-bold text-ink-900 dark:text-ink-100">{formatINR(booking.estimatedPrice?.guideServiceFee || 0)}</p>
+              </div>
+            </div>
+
+            <div className="bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/40 p-3 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-ink-600 dark:text-ink-400">Demand Multiplier</span>
+                <span className="font-mono font-bold text-brand-700 dark:text-brand-400">x{booking.estimatedPrice?.demandMultiplier || 1}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-ink-600 dark:text-ink-400">Advance Amount</span>
+                <span className="font-mono font-bold text-brand-700 dark:text-brand-400">{formatINR(booking.estimatedPrice?.advanceAmount || 0)}</span>
+              </div>
+            </div>
+
+            <div className="border-t border-[var(--border)] pt-3 mt-4">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-ink-900 dark:text-ink-100">Estimated Total</span>
+                <span className="font-mono font-bold text-lg text-brand-600 dark:text-brand-400">{formatINR(booking.estimatedPrice.estimatedMin)}-{formatINR(booking.estimatedPrice.estimatedMax)}</span>
+              </div>
+            </div>
+
+            {booking.payment && (
+              <div className="bg-surface-2 dark:bg-surface-3 p-3 rounded-lg mt-4">
+                <p className="text-xs text-ink-400 mb-2">Payment Status</p>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-ink-600 dark:text-ink-400">Method: <span className="font-semibold text-ink-900 dark:text-ink-100">{booking.payment.method || 'Not specified'}</span></span>
+                  <Badge variant={booking.payment.status === 'paid' ? 'green' : 'amber'}>
+                    {booking.payment.status}
+                  </Badge>
+                </div>
+                <p className="text-xs text-ink-500 mt-2">Amount Paid: <span className="font-mono font-bold">{formatINR(booking.payment.amountPaid || 0)}</span></p>
+              </div>
+            )}
+          </div>
+
+          <Button variant="primary" fullWidth onClick={() => setShowPricingDetails(false)} className="mt-4">
+            Close
+          </Button>
+        </div>
+      </Modal>
+    )}
+    </>
   );
 }
 
@@ -114,7 +226,7 @@ function VerticalStepper({ booking, onClose }) {
   let isCancelled = booking.status === 'cancelled';
   if(isCancelled) activeStep = 1;
   else if(booking.status === 'pending') activeStep = 1;
-  else if(['confirmed', 'in_progress'].includes(booking.status)) activeStep = 3;
+  else if(['confirmed', 'ongoing'].includes(booking.status)) activeStep = 3;
   else if(booking.status === 'completed') activeStep = 4;
 
   const steps = [
@@ -133,8 +245,8 @@ function VerticalStepper({ booking, onClose }) {
     },
     {
       label: 'Ride Details',
-      description: booking.status === 'completed' ? 'Your ride was successfully completed!' : (booking.status === 'confirmed' || booking.status === 'in_progress') ? 'Your guide is ready. View details below.' : 'Awaiting confirmation.',
-      content: (booking.status === 'confirmed' || booking.status === 'in_progress') ? (
+      description: booking.status === 'completed' ? 'Your ride was successfully completed!' : (booking.status === 'confirmed' || booking.status === 'ongoing') ? 'Your guide is ready. View details below.' : 'Awaiting confirmation.',
+      content: (booking.status === 'confirmed' || booking.status === 'ongoing') ? (
         <div className="space-y-3 mt-3 bg-surface-2 dark:bg-surface-3 p-4 rounded-2xl border border-[var(--border)] overflow-hidden relative">
           
           <div className="flex items-center gap-3">
@@ -263,13 +375,23 @@ export function BookingsPage() {
   const location = useLocation();
   const dispatch = useAppDispatch();
   const bookings = useBookings();
+  const { data: bookingsResponse, isLoading, isError } = useGetBookingsQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+  });
   const [filter, setFilter] = useState('all');
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [success, setSuccess] = useState(location.search.includes('success=true'));
 
   useEffect(() => {
-    dispatch(loadMyBookings());
-  }, [dispatch]);
+    const apiBookings = bookingsResponse?.data || bookingsResponse?.bookings || bookingsResponse;
+    if (Array.isArray(apiBookings)) {
+      dispatch(setBookings(apiBookings.map(normalizeBooking)));
+      return;
+    }
+    if (!isLoading && !isError) {
+      dispatch(loadMyBookings());
+    }
+  }, [bookingsResponse, isLoading, isError, dispatch]);
 
   const filtered = bookings.filter((b) => {
     if (filter === 'upcoming') return ['confirmed', 'pending'].includes(b.status);
@@ -312,7 +434,27 @@ export function BookingsPage() {
           ))}
         </div>
 
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="grid md:grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((item) => (
+              <Card key={item} className="!p-5 animate-pulse">
+                <div className="h-5 w-32 rounded bg-surface-2 dark:bg-surface-3 mb-3" />
+                <div className="h-4 w-48 rounded bg-surface-2 dark:bg-surface-3 mb-4" />
+                <div className="space-y-2">
+                  <div className="h-3 w-full rounded bg-surface-2 dark:bg-surface-3" />
+                  <div className="h-3 w-4/5 rounded bg-surface-2 dark:bg-surface-3" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : isError ? (
+          <EmptyState
+            emoji="??"
+            title="Could not load bookings"
+            description="We could not fetch your trips from the server right now."
+            action={<Button variant="primary" onClick={() => navigate('/book')}>Book a tour</Button>}
+          />
+        ) : filtered.length === 0 ? (
           <EmptyState
             emoji="??"
             title="No bookings found"
@@ -375,23 +517,66 @@ export function TrackingPage() {
 export function ProfilePage() {
   const dispatch = useAppDispatch();
   const user = useUser();
-  const { isLoading } = useAuth();
+  const { token } = useAuth();
+  const {
+    data: profileResponse,
+    isLoading: isProfileLoading,
+    isFetching: isProfileFetching,
+  } = useGetProfileQuery(undefined, {
+    skip: !token,
+    refetchOnMountOrArgChange: true,
+  });
+  const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
   const [form, setForm] = useState({
     name: user?.name || '',
+    email: user?.email || '',
     bio: user?.bio || '',
     nationality: user?.nationality || 'Indian',
     preferredLanguage: user?.preferredLanguage || 'English',
+    gender: user?.gender || 'Prefer_not_to_say',
   });
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  useEffect(() => {
+    const profileUser = profileResponse?.data || profileResponse?.user || profileResponse;
+    if (profileUser && token) {
+      dispatch(setAuthSession({ user: { ...user, ...profileUser }, token }));
+    }
+  }, [dispatch, profileResponse, token]);
+
+  useEffect(() => {
+    setForm({
+      name: user?.name || '',
+      email: user?.email || '',
+      bio: user?.bio || '',
+      nationality: user?.nationality || 'Indian',
+      preferredLanguage: user?.preferredLanguage || 'English',
+      gender: user?.gender || 'Prefer_not_to_say',
+    });
+  }, [user]);
+
   async function handleSave(e) {
     e.preventDefault();
-    const result = await dispatch(updateProfile(form));
-    if (updateProfile.fulfilled.match(result)) {
-      dispatch(pushToast({ type: 'success', title: 'Profile updated!', message: 'Your changes have been saved.' }));
+    try {
+      const response = await updateProfile(form).unwrap();
+      const updatedUser = response?.data || response?.user || response;
+      dispatch(setAuthSession({ user: { ...user, ...updatedUser }, token }));
+      dispatch(pushToast({
+        type: 'success',
+        title: 'Profile updated!',
+        message: response?.message || 'Your changes have been saved.'
+      }));
+    } catch (error) {
+      dispatch(pushToast({
+        type: 'error',
+        title: 'Update failed',
+        message: error?.data?.message || 'Could not update your profile. Please try again.'
+      }));
     }
   }
+
+  const isLoading = isUpdatingProfile || isProfileLoading || isProfileFetching;
 
   return (
     <PageWrapper>
@@ -416,10 +601,17 @@ export function ProfilePage() {
           <h3 className="font-display text-lg font-bold text-ink-900 dark:text-ink-100 mb-5">Edit details</h3>
           <form onSubmit={handleSave} className="space-y-4">
             <Input2 label="Full name" placeholder="Your name" value={form.name} onChange={(e) => set('name', e.target.value)} leftIcon={<User className="w-4 h-4" />} />
+            <Input2 label="Email" type="email" placeholder="your@email.com" value={form.email} onChange={(e) => set('email', e.target.value)} leftIcon={<Mail className="w-4 h-4" />} />
             <div className="grid grid-cols-2 gap-3">
               <Select2 label="Nationality" options={NATS.map((n) => ({ value: n, label: n }))} value={form.nationality} onChange={(e) => set('nationality', e.target.value)} />
               <Select2 label="Preferred language" options={LANGS.map((l) => ({ value: l, label: l }))} value={form.preferredLanguage} onChange={(e) => set('preferredLanguage', e.target.value)} />
             </div>
+            <Select2
+              label="Gender"
+              options={PROFILE_GENDER_OPTIONS}
+              value={form.gender}
+              onChange={(e) => set('gender', e.target.value)}
+            />
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-widest text-ink-500 dark:text-ink-400">Bio</label>
               <textarea
@@ -459,118 +651,84 @@ export function ProfilePage() {
 }
 
 export function WalletPage() {
-  const dispatch = useAppDispatch();
-  const user = useUser();
-  const { transactions, isLoading } = useWallet();
-  const [showAdd, setShowAdd] = useState(false);
-  const [amount, setAmount] = useState('');
-  const [method, setMethod] = useState('upi');
-
-  useEffect(() => {
-    dispatch(loadWalletTxns());
-  }, [dispatch]);
-
-  async function handleAdd() {
-    const amt = Number(amount);
-    if (!amt || amt < 10) return;
-    const result = await dispatch(addMoney({ amount: amt, method }));
-    if (addMoney.fulfilled.match(result)) {
-      setShowAdd(false);
-      setAmount('');
-      dispatch(pushToast({ type: 'success', title: `?${amt.toLocaleString('en-IN')} added!`, message: 'Your wallet has been credited.' }));
-    }
-  }
-
-  const balance = user?.walletBalance || 0;
+  const { data: historyResponse, isLoading } = useGetPaymentHistoryQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+  });
+  const paymentsRaw = historyResponse?.data || historyResponse?.payments || historyResponse || [];
+  const payments = Array.isArray(paymentsRaw)
+    ? paymentsRaw.map((item) => ({
+        ...item,
+        id: item?._id || item?.id,
+        amountPaid: item?.payment?.amountPaid || 0,
+        paymentMethod: item?.payment?.method || 'None',
+        paymentStatus: item?.payment?.status || 'pending',
+        transactionId: item?.payment?.transactionId || '-',
+        paidAt: item?.payment?.paidAt || item?.updatedAt || item?.createdAt,
+      }))
+    : [];
 
   return (
     <PageWrapper>
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
         <div className="mb-8">
           <div className="text-xs tracking-[0.3em] text-brand-500 uppercase font-semibold mb-2">Payments</div>
-          <h1 className="font-display text-3xl font-bold text-ink-900 dark:text-ink-100">RwG Wallet</h1>
-        </div>
-
-        <div className="wallet-bg rounded-3xl p-7 mb-6 relative overflow-hidden shadow-float">
-          <div className="relative z-10">
-            <p className="text-white/50 text-sm font-medium mb-1">Available balance</p>
-            <p className="font-display text-5xl font-bold text-white mb-1">{formatINR(balance)}</p>
-            <p className="text-white/40 text-xs">{user?.name} � RwG Tourist</p>
-          </div>
-          <div className="relative z-10 flex gap-3 mt-6">
-            <Button variant="white" size="sm" onClick={() => setShowAdd(true)} icon={<PlusIcon className="w-4 h-4" />}>Add money</Button>
-          </div>
-        </div>
-
-        <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar pb-1">
-          {[100, 200, 500, 1000, 2000].map((a) => (
-            <button
-              key={a}
-              onClick={() => { setAmount(String(a)); setShowAdd(true); }}
-              className="flex-shrink-0 px-4 py-2 rounded-xl border border-[var(--border-md)] text-sm font-semibold text-ink-700 dark:text-ink-300 hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-all"
-            >
-              +{formatINR(a)}
-            </button>
-          ))}
+          <h1 className="font-display text-3xl font-bold text-ink-900 dark:text-ink-100">Payment history</h1>
+          <p className="text-ink-400 mt-1">Your booking payments and transaction details.</p>
         </div>
 
         <Card className="!p-0 overflow-hidden">
           <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between">
             <h3 className="font-display font-bold text-ink-900 dark:text-ink-100">Transactions</h3>
-            <span className="text-xs text-ink-400">{transactions.length} total</span>
+            <span className="text-xs text-ink-400">{payments.length} total</span>
           </div>
-          {transactions.length === 0 ? (
+          {isLoading ? (
+            <div className="py-12 text-center text-ink-400 text-sm">Loading transactions...</div>
+          ) : payments.length === 0 ? (
             <div className="py-12 text-center text-ink-400 text-sm">No transactions yet</div>
           ) : (
             <div className="divide-y divide-[var(--border)]">
-              {transactions.map((t) => (
-                <div key={t.id} className="flex items-center gap-3 px-5 py-4">
-                  <div className={`w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 ${t.type === 'credit' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
-                    {t.type === 'credit' ? <TrendingUp className="w-4 h-4 text-green-500" /> : <TrendingDown className="w-4 h-4 text-red-500" />}
+              {payments.map((payment) => (
+                <div key={payment.id} className="px-5 py-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${payment.paymentStatus === 'paid' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-amber-50 dark:bg-amber-900/20'}`}>
+                      {payment.paymentStatus === 'paid' ? <TrendingUp className="w-4 h-4 text-green-500" /> : <TrendingDown className="w-4 h-4 text-amber-500" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-ink-900 dark:text-ink-100">{payment.city}</p>
+                          <p className="text-xs text-ink-400 mt-0.5">{formatDate(payment.date)} · {payment.startTime}</p>
+                        </div>
+                        <Badge variant={payment.paymentStatus === 'paid' ? 'green' : 'amber'}>
+                          {payment.paymentStatus}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 mt-3 text-xs">
+                        <div>
+                          <p className="text-ink-400">Payment method</p>
+                          <p className="font-medium text-ink-900 dark:text-ink-100">{payment.paymentMethod}</p>
+                        </div>
+                        <div>
+                          <p className="text-ink-400">Amount paid</p>
+                          <p className="font-mono font-bold text-ink-900 dark:text-ink-100">{formatINR(payment.amountPaid)}</p>
+                        </div>
+                        <div>
+                          <p className="text-ink-400">Transaction ID</p>
+                          <p className="font-mono text-ink-900 dark:text-ink-100 break-all">{payment.transactionId}</p>
+                        </div>
+                        <div>
+                          <p className="text-ink-400">Paid at</p>
+                          <p className="text-ink-900 dark:text-ink-100">{formatDate(payment.paidAt, { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-ink-900 dark:text-ink-100 truncate">{t.description}</p>
-                    <p className="text-xs text-ink-400 mt-0.5">{formatDate(t.createdAt)}</p>
-                  </div>
-                  <span className={`text-sm font-mono font-bold flex-shrink-0 ${t.type === 'credit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                    {t.type === 'credit' ? '+' : '-'}{formatINR(t.amount)}
-                  </span>
                 </div>
               ))}
             </div>
           )}
         </Card>
       </div>
-
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Add money to wallet" className='p-5'>
-        <div className="space-y-4 p-5">
-          <Input2
-            label="Amount (?)"
-            type="number"
-            placeholder="Enter amount"
-            min="10"
-            max="50000"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            leftIcon={<WIcon className="w-4 h-4" />}
-          />
-          <div className="flex gap-2 flex-wrap">
-            {[100, 200, 500, 1000].map((a) => (
-              <button
-                key={a}
-                onClick={() => setAmount(String(a))}
-                className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${amount === String(a) ? 'border-brand-400 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400' : 'border-[var(--border)] text-ink-600 dark:text-ink-400 hover:border-[var(--border-strong)]'}`}
-              >
-                ?{a.toLocaleString('en-IN')}
-              </button>
-            ))}
-          </div>
-          <Select2 label="Payment method" options={PM.map((m) => ({ value: m.id, label: `${m.icon} ${m.label}` }))} value={method} onChange={(e) => setMethod(e.target.value)} />
-          <Button variant="primary" fullWidth size="lg" loading={isLoading} onClick={handleAdd} disabled={!amount || Number(amount) < 10}>
-            Add {amount ? formatINR(Number(amount)) : 'money'}
-          </Button>
-        </div>
-      </Modal>
     </PageWrapper>
   );
 }

@@ -2,10 +2,9 @@ import { api } from "../service";
 
 export const bookingApi = api.injectEndpoints({
   endpoints: (builder) => ({
-
     createBooking: builder.mutation({
       query: (data) => ({
-        url: "/bookings",
+        url: "/tourist/booking",
         method: "POST",
         body: data
       }),
@@ -13,7 +12,7 @@ export const bookingApi = api.injectEndpoints({
     }),
 
     getBookings: builder.query({
-      query: () => "/bookings",
+      query: () => "/tourist/booking",
       providesTags: ["Booking"]
     }),
 

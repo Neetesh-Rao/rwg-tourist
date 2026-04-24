@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Sun, Moon, Menu, X, Bell, LogOut, Compass, Calendar, LayoutDashboard, Wallet } from 'lucide-react';
 import { useAppDispatch, useAuth, useTheme } from '@/app/store/store';
-import { logout } from '@/features/auth/model/authSlice';
-import { toggleTheme } from '@/features/wallet/model/uiWalletSlice';
+import { logout } from '@/app/store/slices/authSlice';
+import { toggleTheme } from '@/app/store/slices/uiWalletSlice';
 import Avatar from '@/shared/ui/Avatar/Avatar';
 import Button from '@/shared/ui/Button/Button';
 import logo from '@/shared/assets/logo.png';
@@ -12,7 +12,7 @@ const LINKS = [
   { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { to: '/book', label: 'Book Tour', Icon: Compass },
   { to: '/bookings', label: 'My Trips', Icon: Calendar },
-  { to: '/wallet', label: 'Wallet', Icon: Wallet },
+  { to: '/transactions', label: 'Transactions', Icon: Wallet },
 ];
 
 export default function Navbar() {

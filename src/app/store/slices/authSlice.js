@@ -4,7 +4,6 @@ import{ls,genId,sleep}from'@/shared/lib/helpers';
 export const registerUser=createAsyncThunk('auth/register',async(data,{rejectWithValue})=>{
   try{
     await sleep(1000);
-    // TODO: const res = await axios.post('/api/v1/auth/register', data);
     const user={id:genId('usr'),name:data.name,email:data.email,phone:data.phone,nationality:data.nationality,preferredLanguage:data.preferredLanguage,gender:data.gender,avatar:null,bio:'',totalTrips:0,walletBalance:500,joinedAt:new Date().toISOString()};
     const token=genId('tok');
     ls.set('rwg_token',token);ls.set('rwg_user',user);
@@ -15,7 +14,6 @@ export const registerUser=createAsyncThunk('auth/register',async(data,{rejectWit
 export const loginUser=createAsyncThunk('auth/login',async(data,{rejectWithValue})=>{
   try{
     await sleep(800);
-    // TODO: const res = await axios.post('/api/v1/auth/login', data);
     const stored=ls.get('rwg_user');
     if(!stored)return rejectWithValue('No account found. Please register first.');
     const token=genId('tok');ls.set('rwg_token',token);
@@ -26,7 +24,6 @@ export const loginUser=createAsyncThunk('auth/login',async(data,{rejectWithValue
 export const updateProfile=createAsyncThunk('auth/updateProfile',async(data,{rejectWithValue,getState})=>{
   try{
     await sleep(600);
-    // TODO: const res = await axios.put('/api/v1/auth/profile', data);
     const updated={...getState().auth.user,...data};
     ls.set('rwg_user',updated);return updated;
   }catch(e){return rejectWithValue('Profile update failed.');}
@@ -40,6 +37,18 @@ const authSlice=createSlice({
     isLoading:false,error:null,
   },
   reducers:{
+    setAuthSession:(s,{payload})=>{
+      const user=payload?.user||null;
+      const token=payload?.token||null;
+      s.user=user;
+      s.token=token;
+      s.isAuthenticated=!!(token&&user);
+      s.error=null;
+      if(user&&token){
+        ls.set('rwg_user',user);
+        ls.set('rwg_token',token);
+      }
+    },
     logout:s=>{s.user=null;s.token=null;s.isAuthenticated=false;ls.remove('rwg_token');ls.remove('rwg_user');},
     clearError:s=>{s.error=null;},
     creditWallet:(s,{payload})=>{if(s.user){s.user.walletBalance=(s.user.walletBalance||0)+payload;ls.set('rwg_user',s.user);}},
@@ -53,5 +62,5 @@ const authSlice=createSlice({
      .addCase(updateProfile.pending,P).addCase(updateProfile.fulfilled,(s,{payload})=>{s.isLoading=false;s.user=payload;}).addCase(updateProfile.rejected,R);
   },
 });
-export const{logout,clearError,creditWallet,debitWallet}=authSlice.actions;
+export const{setAuthSession,logout,clearError,creditWallet,debitWallet}=authSlice.actions;
 export default authSlice.reducer;

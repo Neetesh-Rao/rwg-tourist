@@ -32,7 +32,7 @@ function AppRoutes() {
       <Route path="/bookings" element={<PrivateRoute><BookingsPage /></PrivateRoute>} />
       <Route path="/tracking" element={<PrivateRoute><TrackingPage /></PrivateRoute>} />
       <Route path="/profile"  element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-      <Route path="/wallet"   element={<PrivateRoute><WalletPage /></PrivateRoute>} />
+      <Route path="/Transactions"   element={<PrivateRoute><WalletPage /></PrivateRoute>} />
       <Route path="*"         element={<Navigate to="/" replace />} />
     </Routes>
   );

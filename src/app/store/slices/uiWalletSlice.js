@@ -1,8 +1,7 @@
 import{createSlice,createAsyncThunk}from'@reduxjs/toolkit';
 import{ls,sleep,genId}from'@/shared/lib/helpers';
-import{creditWallet}from'@/features/auth/model/authSlice';
+import{creditWallet}from'./authSlice';
 
-// ── UI Slice ───────────────────────────────────────────
 const initTheme=()=>{const s=ls.get('rwg_theme','light');if(s==='dark')document.documentElement.classList.add('dark');return s;};
 
 export const uiSlice=createSlice({
@@ -19,11 +18,9 @@ export const uiSlice=createSlice({
 });
 export const{toggleTheme,setTheme,openModal,closeModal,pushToast,popToast}=uiSlice.actions;
 
-// ── Wallet Slice ───────────────────────────────────────
 export const addMoney=createAsyncThunk('wallet/add',async({amount,method},{dispatch,rejectWithValue})=>{
   try{
     await sleep(1500);
-    // TODO: const res = await axios.post('/api/v1/wallet/add', { amount, method });
     const txn={id:genId('txn'),type:'credit',amount,method,status:'success',createdAt:new Date().toISOString(),description:`Added via ${method}`};
     dispatch(creditWallet(amount));
     const ex=ls.get('rwg_wallet_txns',[]);ls.set('rwg_wallet_txns',[txn,...ex]);
@@ -35,7 +32,7 @@ export const loadWalletTxns=createAsyncThunk('wallet/loadTxns',async()=>{
   await sleep(200);
   return ls.get('rwg_wallet_txns',[
     {id:'txn_w1',type:'credit',amount:500,method:'welcome_bonus',status:'success',createdAt:new Date(Date.now()-864e5*3).toISOString(),description:'Welcome bonus 🎉'},
-    {id:'txn_w2',type:'debit', amount:450,method:'booking',      status:'success',createdAt:new Date(Date.now()-864e5*2).toISOString(),description:'Jaipur tour advance'},
+    {id:'txn_w2',type:'debit',amount:450,method:'booking',status:'success',createdAt:new Date(Date.now()-864e5*2).toISOString(),description:'Jaipur tour advance'},
   ]);
 });
 
