@@ -123,7 +123,7 @@ export default function LoginPage() {
 
   return (
     <AuthLayout
-      title="Login with OTP"
+      title="Login/Register with OTP"
       subtitle="Enter your mobile number, receive a one-time password, and verify it to continue."
     >
       <div className="mb-6 rounded-2xl border border-[var(--border)] bg-white/70 dark:bg-ink-900/40 backdrop-blur-sm p-4">
@@ -256,10 +256,10 @@ export default function LoginPage() {
         </form>
       )}
 
-      <Divider label="New to Ride with Guide?" className="mt-6" />
+      {/* <Divider label="New to Ride with Guide?" className="mt-6" />
       <Link to="/register">
         <Button variant="secondary" size="lg" fullWidth>Create a free account</Button>
-      </Link>
+      </Link> */}
     </AuthLayout>
   );
 }

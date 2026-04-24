@@ -33,7 +33,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/"         element={<HomePage />} />
-      <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+      {/* <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} /> */}
       <Route path="/login"    element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/dashboard"element={<ProfileCompletedRoute><DashboardPage /></ProfileCompletedRoute>} />
       <Route path="/book"     element={<ProfileCompletedRoute><BookingPage /></ProfileCompletedRoute>} />
