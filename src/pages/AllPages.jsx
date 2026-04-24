@@ -34,6 +34,7 @@ import Select2 from '@/shared/ui/Select/Select';
 import Avatar from '@/shared/ui/Avatar/Avatar';
 import Modal from '@/shared/ui/Modal/Modal';
 import LiveTracker from '@/shared/map/LiveTracker/LiveTracker';
+//k
 import {
   BOOKING_STATUS,
   LANGUAGES as LANGS,
@@ -518,6 +519,7 @@ export function ProfilePage() {
   const dispatch = useAppDispatch();
   const user = useUser();
   const { token } = useAuth();
+  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
   const {
     data: profileResponse,
     isLoading: isProfileLoading,
@@ -554,6 +556,12 @@ export function ProfilePage() {
       preferredLanguage: user?.preferredLanguage || 'English',
       gender: user?.gender || 'Prefer_not_to_say',
     });
+  }, [user]);
+
+  useEffect(() => {
+    if (user && user.profileCompleted === false) {
+      setShowProfilePrompt(true);
+    }
   }, [user]);
 
   async function handleSave(e) {
@@ -646,6 +654,17 @@ export function ProfilePage() {
           </div>
         </Card>
       </div>
+
+      <Modal open={showProfilePrompt} onClose={() => setShowProfilePrompt(false)} title="Complete Your Profile" className="p-5">
+        <div className="space-y-4">
+          <p className="text-sm text-ink-600 dark:text-ink-300 leading-relaxed">
+            Please complete your profile before you continue. Booking tours, transactions, and other actions stay locked until your profile is finished.
+          </p>
+          <Button variant="primary" fullWidth onClick={() => setShowProfilePrompt(false)}>
+            Complete Profile
+          </Button>
+        </div>
+      </Modal>
     </PageWrapper>
   );
 }
