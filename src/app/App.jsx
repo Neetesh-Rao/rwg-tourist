@@ -16,9 +16,17 @@ function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
+
+function ProfileCompletedRoute({ children }) {
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return user?.profileCompleted ? children : <Navigate to="/profile" replace />;
+}
+
 function PublicRoute({ children }) {
-  const { isAuthenticated } = useAuth();
-  return !isAuthenticated ? children : <Navigate to="/dashboard" replace />;
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) return children;
+  return <Navigate to={user?.profileCompleted ? "/dashboard" : "/profile"} replace />;
 }
 
 function AppRoutes() {
@@ -27,12 +35,13 @@ function AppRoutes() {
       <Route path="/"         element={<HomePage />} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
       <Route path="/login"    element={<PublicRoute><LoginPage /></PublicRoute>} />
-      <Route path="/dashboard"element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
-      <Route path="/book"     element={<PrivateRoute><BookingPage /></PrivateRoute>} />
-      <Route path="/bookings" element={<PrivateRoute><BookingsPage /></PrivateRoute>} />
-      <Route path="/tracking" element={<PrivateRoute><TrackingPage /></PrivateRoute>} />
+      <Route path="/dashboard"element={<ProfileCompletedRoute><DashboardPage /></ProfileCompletedRoute>} />
+      <Route path="/book"     element={<ProfileCompletedRoute><BookingPage /></ProfileCompletedRoute>} />
+      <Route path="/bookings" element={<ProfileCompletedRoute><BookingsPage /></ProfileCompletedRoute>} />
+      <Route path="/tracking" element={<ProfileCompletedRoute><TrackingPage /></ProfileCompletedRoute>} />
       <Route path="/profile"  element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-      <Route path="/Transactions"   element={<PrivateRoute><WalletPage /></PrivateRoute>} />
+      <Route path="/transactions"   element={<ProfileCompletedRoute><WalletPage /></ProfileCompletedRoute>} />
+      <Route path="/Transactions"   element={<Navigate to="/transactions" replace />} />
       <Route path="*"         element={<Navigate to="/" replace />} />
     </Routes>
   );

@@ -113,7 +113,7 @@ export default function LoginPage() {
 
       localStorage.setItem('token', token);
       dispatch(setAuthSession({ user, token }));
-      navigate('/dashboard');
+      navigate(user?.profileCompleted ? '/dashboard' : '/profile');
     } catch (error) {
       setApiError(getApiMessage(error?.data, 'OTP verification failed. Please try again.'));
     }
