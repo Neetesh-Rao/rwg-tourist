@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Clock, Plus, X, ChevronRight, ChevronLeft, Check, Shield, Zap } from 'lucide-react';
+import { MapPin, Clock, Plus, X, ChevronRight, ChevronLeft, Check, Shield, Zap, Wallet, CreditCard, Smartphone, Landmark, Loader2 } from 'lucide-react';
 import {
   useAppDispatch, useBooking, useDraft, useEstimate, useSlots, useStep, useUser,
 } from '@/app/store/store';
 import {
-  setStep, updateDraft, selectSlot, addStop, removeStop, resetWizard,
-  fetchSlots, estimatePrice, createBooking,
-} from '@/features/booking/model/bookingSlice';
-import { pushToast } from '@/features/wallet/model/uiWalletSlice';
+  setStep, updateDraft, selectSlot, bookingCreated, addStop, removeStop, resetWizard,
+  fetchSlots, estimatePrice,
+} from '@/app/store/slices/bookingSlice';
+import { debitWallet } from '@/app/store/slices/authSlice';
+import { useCreateBookingMutation } from '@/app/store/slices/bookingApi';
+import { usePayWithWalletMutation } from '@/app/store/slices/walletApi';
+import { useCreateOrderMutation, useVerifyPaymentMutation } from '@/app/store/slices/paymentApi';
+import { pushToast } from '@/app/store/slices/uiWalletSlice';
 import PageWrapper from '@/shared/layout/PageWrapper/PageWrapper';
 import Button from '@/shared/ui/Button/Button';
 import Input from '@/shared/ui/Input/Input';
@@ -16,6 +20,7 @@ import Select from '@/shared/ui/Select/Select';
 import Textarea from '@/shared/ui/Textarea/Textarea';
 import Card from '@/shared/ui/Card/Card';
 import Badge from '@/shared/ui/Badge/Badge';
+import Modal from '@/shared/ui/Modal/Modal';
 import StarRating from '@/shared/ui/StarRating/StarRating';
 import { Skeleton } from '@/shared/ui/Loader/Loader';
 import MapPicker from '@/shared/map/MapPicker/MapPicker';
@@ -23,6 +28,143 @@ import { CITIES, RIDE_TYPES, CITY_STOPS, LANGUAGES, PAYMENT_METHODS, UPI_APPS } 
 import { formatINR, getTomorrow } from '@/shared/lib/helpers';
 
 const STEPS = ['Trip Details', 'Your Stops', 'Review & Pay'];
+
+const formatBookingTime = (time) => {
+  if (!time) return '';
+  const [hours = '0', minutes = '00'] = time.split(':');
+  const hour = Number(hours);
+  const suffix = hour >= 12 ? 'PM' : 'AM';
+  const twelveHour = hour % 12 || 12;
+  return `${String(twelveHour).padStart(2, '0')}:${minutes} ${suffix}`;
+};
+
+const mapDurationType = (rideType) => {
+  const durationMap = {
+    '2hr': '2-hour',
+    '5hr': '5-hour',
+    fullday: 'full-day',
+    custom: 'custom',
+  };
+  return durationMap[rideType] || rideType;
+};
+
+const mapGenderPreference = (preference) => {
+  const preferenceMap = {
+    female_first: 'Female guide preferred',
+    male_first: 'Male guide preferred',
+    any: 'No preference',
+  };
+  return preferenceMap[preference] || preference;
+};
+
+const PAYMENT_META = {
+  upi: {
+    Icon: Smartphone,
+    title: 'Razorpay UPI Checkout',
+    helper: 'Choose your UPI app and complete payment in the Razorpay window.',
+    cta: 'Pay with UPI',
+  },
+  card: {
+    Icon: CreditCard,
+    title: 'Razorpay Card Checkout',
+    helper: 'Use your debit or credit card securely through Razorpay.',
+    cta: 'Pay with Card',
+  },
+  wallet: {
+    Icon: Wallet,
+    title: 'RwG Wallet',
+    helper: 'The advance amount will be deducted directly from your wallet.',
+    cta: 'Pay with Wallet',
+  },
+  netbank: {
+    Icon: Landmark,
+    title: 'Razorpay Net Banking',
+    helper: 'Continue to Razorpay and select your bank to finish payment.',
+    cta: 'Pay with Net Banking',
+  },
+};
+
+const loadRazorpayScript = () =>
+  new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+
+    const existingScript = document.querySelector('script[data-razorpay="checkout"]');
+    if (existingScript) {
+      existingScript.addEventListener('load', () => resolve(true), { once: true });
+      existingScript.addEventListener('error', () => resolve(false), { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.dataset.razorpay = 'checkout';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+
+const getRazorpayOrderData = (payload) => {
+  const root = payload || {};
+  const data = root?.data || {};
+  const meta = data?.meta || root?.meta || {};
+  const nestedOrder =
+    data?.order ||
+    root?.order ||
+    data?.razorpayOrder ||
+    root?.razorpayOrder ||
+    data?.data?.order ||
+    root?.data?.data?.order ||
+    data?.result?.order ||
+    root?.result?.order;
+
+  const order = nestedOrder || data || root;
+
+  const key =
+    data?.key ||
+    data?.keyId ||
+    data?.key_id ||
+    data?.razorpay_key ||
+    data?.razorpayKey ||
+    root?.key ||
+    root?.keyId ||
+    root?.key_id ||
+    root?.razorpay_key ||
+    root?.razorpayKey ||
+    order?.key ||
+    order?.keyId ||
+    order?.key_id ||
+    order?.razorpay_key ||
+    meta?.key ||
+    meta?.keyId ||
+    meta?.key_id ||
+    meta?.razorpay_key ||
+    import.meta.env.VITE_RAZORPAY_KEY_ID;
+
+  const orderId =
+    order?.id ||
+    order?.orderId ||
+    order?.order_id ||
+    order?.razorpayOrderId ||
+    data?.orderId ||
+    data?.order_id ||
+    data?.razorpayOrderId ||
+    root?.orderId ||
+    root?.order_id ||
+    root?.razorpayOrderId ||
+    meta?.orderId ||
+    meta?.order_id;
+
+  return {
+    key,
+    orderId,
+    amount: order?.amount || order?.amount_due || data?.amount || data?.amount_due || root?.amount || root?.amount_due,
+    currency: order?.currency || data?.currency || root?.currency || meta?.currency || 'INR',
+  };
+};
 
 // ── Step indicator ─────────────────────────────────────
 function StepBar({ current }) {
@@ -76,7 +218,7 @@ function TripDetails() {
     if (!form.city || !form.date || !form.pickupAddress) return;
     dispatch(updateDraft(form));
     dispatch(fetchSlots({ city: form.city, date: form.date, startTime: form.startTime, endTime: form.endTime, genderPreference: form.genderPreference }));
-    dispatch(estimatePrice({ cityId: form.city, rideTypeId: form.rideType, hoursBooked: selRT?.hours || 5 }));
+    dispatch(estimatePrice({ cityId: form.city, rideTypeId: form.rideType, hoursBOOKED: selRT?.hours || 5 }));
     dispatch(setStep(2));
   }
 
@@ -261,6 +403,11 @@ function AddStops() {
   const cityStops = CITY_STOPS[draft.city] || [];
   const current   = draft.stops || [];
   const cats      = [...new Set(cityStops.map(s => s.category))];
+  const suggestedStops = cityStops.filter(
+    (stop) =>
+      stop.name.toLowerCase().includes(custom.trim().toLowerCase()) &&
+      !current.some((item) => item.name === stop.name)
+  );
 
   const isAdded = n => current.some(s => s.name === n);
 
@@ -275,7 +422,20 @@ function AddStops() {
 
   function addCustom() {
     if (!custom.trim()) return;
-    dispatch(addStop({ id: Date.now().toString(), name: custom.trim(), address: custom.trim(), estimatedDuration: 45 }));
+    const matchedStop = cityStops.find(
+      (stop) => stop.name.toLowerCase() === custom.trim().toLowerCase()
+    );
+
+    dispatch(addStop({
+      id: Date.now().toString(),
+      name: matchedStop?.name || custom.trim(),
+      address: matchedStop ? `${matchedStop.name}, ${draft.city}` : custom.trim(),
+      estimatedDuration: matchedStop?.duration || 45,
+      lat: matchedStop?.lat,
+      lng: matchedStop?.lng,
+      type: matchedStop?.category || 'Custom',
+      category: matchedStop?.category || 'Custom',
+    }));
     setCustom('');
   }
 
@@ -309,8 +469,25 @@ function AddStops() {
 
       {/* Custom stop */}
       <div className="flex gap-2">
-        <Input placeholder="Add a custom stop or landmark…" value={custom} onChange={e => setCustom(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && addCustom()} leftIcon={<MapPin className="w-4 h-4" />} className="flex-1" />
+        <div className="flex-1">
+          <Input
+            placeholder="Add a custom stop or landmark…"
+            value={custom}
+            onChange={e => setCustom(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && addCustom()}
+            leftIcon={<MapPin className="w-4 h-4" />}
+            className="flex-1"
+            list="city-stop-suggestions"
+            hint={suggestedStops.length ? `${suggestedStops.length} suggestions found` : 'Type to see matching city stops'}
+          />
+          <datalist id="city-stop-suggestions">
+            {suggestedStops.map((stop) => (
+              <option key={stop.name} value={stop.name}>
+                {stop.category}
+              </option>
+            ))}
+          </datalist>
+        </div>
         <Button variant="secondary" onClick={addCustom} icon={<Plus className="w-4 h-4" />}>Add</Button>
       </div>
 
@@ -352,18 +529,197 @@ function ReviewPay() {
   const draft     = useDraft();
   const estimate  = useEstimate();
   const user      = useUser();
-  const { isLoading } = useBooking();
+  const [createBooking, { isLoading }] = useCreateBookingMutation();
+  const [payWithWallet, { isLoading: isPayingWithWallet }] = usePayWithWalletMutation();
+  const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
+  const [verifyPayment, { isLoading: isVerifyingPayment }] = useVerifyPaymentMutation();
   const [payMethod, setPayMethod] = useState('upi');
   const [upiApp,    setUpiApp]    = useState('');
+  const [paymentStage, setPaymentStage] = useState('idle');
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
   const selRT = RIDE_TYPES.find(r => r.id === draft.rideType);
   const walletBalance = user?.walletBalance || 0;
+  const advanceAmount = estimate?.advanceAmount || 0;
+  const paymentMeta = PAYMENT_META[payMethod] || PAYMENT_META.upi;
+  const isBusy = isLoading || isPayingWithWallet || isCreatingOrder || isVerifyingPayment;
+  const canUseWallet = walletBalance >= advanceAmount;
+  const paymentStageLabel = {
+    idle: 'Ready to pay',
+    creating_booking: 'Creating booking',
+    preparing_order: 'Preparing Razorpay order',
+    awaiting_payment: 'Waiting for payment',
+    verifying_payment: 'Verifying payment',
+    paying_with_wallet: 'Debiting wallet',
+  }[paymentStage];
+
+  const openRazorpayCheckout = ({ orderPayload, bookingId }) =>
+    new Promise((resolve, reject) => {
+      const {
+        key: razorpayKey,
+        orderId,
+        amount,
+        currency,
+      } = getRazorpayOrderData(orderPayload);
+
+      if (!window.Razorpay || !orderId) {
+        console.error('Razorpay order payload missing order id:', orderPayload);
+        reject(new Error('Razorpay order id is missing from create-order response.'));
+        return;
+      }
+
+      if (!razorpayKey) {
+        console.error('Razorpay key missing. Add VITE_RAZORPAY_KEY_ID or return key from create-order:', orderPayload);
+        reject(new Error('Razorpay key is missing. Add VITE_RAZORPAY_KEY_ID in .env or return the key from create-order API.'));
+        return;
+      }
+
+      const razorpay = new window.Razorpay({
+        key: razorpayKey,
+        amount,
+        currency,
+        name: 'Ride With Guide',
+        description: `Advance payment for booking ${bookingId}`,
+        order_id: orderId,
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+          contact: user?.phone || '',
+        },
+        notes: {
+          bookingId,
+        },
+        handler: async (paymentResponse) => {
+          try {
+            setPaymentStage('verifying_payment');
+            const verifyResponse = await verifyPayment({
+              razorpayOrderId: paymentResponse.razorpay_order_id,
+              razorpayPaymentId: paymentResponse.razorpay_payment_id,
+              razorpaySignature: paymentResponse.razorpay_signature,
+              bookingId,
+            }).unwrap();
+            resolve({
+              paymentResponse,
+              verifyResponse,
+            });
+          } catch (error) {
+            reject(error);
+          }
+        },
+        modal: {
+          ondismiss: () => reject(new Error('Payment cancelled by user.')),
+        },
+      });
+
+      razorpay.open();
+    });
 
   async function handleConfirm() {
-    const result = await dispatch(createBooking());
-    if (createBooking.fulfilled.match(result)) {
-      dispatch(pushToast({ type:'success', title:'Booking confirmed! 🎉', message:`Your guide will be notified. OTP: ${result.payload.otp}` }));
+    const payload = {
+      city: CITIES.find((city) => city.id === draft.city)?.name || draft.city,
+      date: draft.date,
+      startTime: formatBookingTime(draft.startTime),
+      durationType: mapDurationType(draft.rideType),
+      pickupLocation: {
+        address: draft.pickupAddress,
+        lat: draft.pickupLat,
+        lng: draft.pickupLng,
+      },
+      language: draft.preferredLanguage,
+      genderPreference: mapGenderPreference(draft.genderPreference),
+      stops: (draft.stops || []).map((stop) => ({
+        name: stop.name,
+        type: stop.category || stop.type || 'Custom',
+      })),
+      pricing: estimate ? {
+        baseFare: estimate.baseFare,
+        distanceCost: estimate.distanceCharge,
+        timeCharge: estimate.timeCharge,
+        guideServiceFee: estimate.guideFee,
+        estimatedRange: {
+          min: estimate.estimatedMin,
+          max: estimate.estimatedMax,
+        },
+        advanceAmount: estimate.advanceAmount,
+      } : undefined,
+    };
+
+    try {
+      setPaymentModalOpen(true);
+
+      if (payMethod === 'wallet' && walletBalance < advanceAmount) {
+        dispatch(pushToast({
+          type:'error',
+          title:'Insufficient wallet balance',
+          message:'Please add money to your wallet or choose another payment method.'
+        }));
+        setPaymentModalOpen(false);
+        return;
+      }
+
+      setPaymentStage('creating_booking');
+      const response = await createBooking(payload).unwrap();
+      const createdBooking = response?.data || response?.booking || response;
+      const bookingId = createdBooking?._id || createdBooking?.id;
+      let finalBooking = createdBooking;
+
+      if (payMethod === 'wallet') {
+        setPaymentStage('paying_with_wallet');
+        await payWithWallet({
+          user_id: user?._id || user?.id || user?.userId,
+          booking_id: bookingId,
+          amount: String(advanceAmount),
+        }).unwrap();
+
+        dispatch(debitWallet(advanceAmount));
+      } else {
+        const scriptLoaded = await loadRazorpayScript();
+        if (!scriptLoaded) {
+          throw new Error('Could not load Razorpay checkout.');
+        }
+
+        setPaymentStage('preparing_order');
+        const orderPayload = await createOrder({
+          bookingId,
+        }).unwrap();
+
+        setPaymentStage('awaiting_payment');
+        const razorpayResult = await openRazorpayCheckout({
+          orderPayload,
+          bookingId,
+        });
+
+        const verifiedBooking =
+          razorpayResult?.verifyResponse?.data?.booking ||
+          razorpayResult?.verifyResponse?.data?.data?.booking ||
+          razorpayResult?.verifyResponse?.booking ||
+          razorpayResult?.verifyResponse?.data;
+
+        if (verifiedBooking && (verifiedBooking._id || verifiedBooking.id)) {
+          finalBooking = {
+            ...createdBooking,
+            ...verifiedBooking,
+          };
+        }
+      }
+
+      dispatch(bookingCreated(finalBooking));
+      dispatch(pushToast({
+        type:'success',
+        title:'Booking confirmed! 🎉',
+        message: response?.message || 'Your booking has been created successfully.'
+      }));
+      setPaymentModalOpen(false);
+      setPaymentStage('idle');
       navigate('/bookings');
+    } catch (error) {
+      setPaymentModalOpen(false);
+      setPaymentStage('idle');
+      dispatch(pushToast({
+        type:'error',
+        title:'Booking failed',
+        message: error?.data?.message || error?.message || 'Could not create booking. Please try again.'
+      }));
     }
   }
 
@@ -457,6 +813,45 @@ function ReviewPay() {
           ))}
         </div>
 
+        <div className="mt-4 rounded-2xl border border-[var(--border)] bg-surface-2/70 dark:bg-surface-3/50 p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/40 flex items-center justify-center text-brand-600 dark:text-brand-400 flex-shrink-0">
+              <paymentMeta.Icon className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-semibold text-ink-900 dark:text-ink-100">{paymentMeta.title}</p>
+                {payMethod !== 'wallet' && <Badge variant="brand" size="xs">Razorpay</Badge>}
+                {payMethod === 'wallet' && canUseWallet && <Badge variant="green" size="xs">Ready</Badge>}
+                {payMethod === 'wallet' && !canUseWallet && <Badge variant="amber" size="xs">Low balance</Badge>}
+              </div>
+              <p className="mt-1 text-xs leading-5 text-ink-500 dark:text-ink-400">{paymentMeta.helper}</p>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
+              <p className="text-ink-400">Advance due</p>
+              <p className="mt-1 font-mono font-bold text-ink-900 dark:text-ink-100">{formatINR(advanceAmount)}</p>
+            </div>
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
+              <p className="text-ink-400">{payMethod === 'wallet' ? 'Wallet balance' : 'Payment gateway'}</p>
+              <p className="mt-1 font-semibold text-ink-900 dark:text-ink-100">
+                {payMethod === 'wallet' ? formatINR(walletBalance) : 'Razorpay Secure'}
+              </p>
+            </div>
+          </div>
+          {payMethod === 'wallet' && !canUseWallet && (
+            <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+              Your wallet needs {formatINR(Math.max(advanceAmount - walletBalance, 0))} more to continue with wallet payment.
+            </p>
+          )}
+          {payMethod === 'upi' && upiApp && (
+            <p className="mt-3 text-xs text-brand-600 dark:text-brand-400">
+              Selected UPI app: {UPI_APPS.find((app) => app.id === upiApp)?.name || 'UPI'}
+            </p>
+          )}
+        </div>
+
         {payMethod === 'upi' && (
           <div className="mt-3 pt-3 border-t border-[var(--border)]">
             <p className="text-xs text-ink-400 mb-2 font-medium">Select UPI app</p>
@@ -483,11 +878,72 @@ function ReviewPay() {
 
       <div className="flex justify-between gap-3 pt-1">
         <Button variant="ghost" onClick={() => dispatch(setStep(2))} icon={<ChevronLeft className="w-4 h-4" />}>Back</Button>
-        <Button variant="primary" size="lg" loading={isLoading} onClick={handleConfirm} className="flex-1"
+        <Button variant="primary" size="lg" loading={isBusy} onClick={handleConfirm} className="flex-1"
+          disabled={(payMethod === 'wallet' && !canUseWallet) || (payMethod === 'upi' && !upiApp)}
           iconRight={<Check className="w-4 h-4" />}>
-          Confirm & Pay {estimate ? formatINR(estimate.advanceAmount) : '…'}
+          {paymentMeta.cta} {estimate ? formatINR(estimate.advanceAmount) : '…'}
         </Button>
       </div>
+
+      <Modal open={paymentModalOpen} onClose={() => {}} title="Payment in Progress" className="p-5" size="md">
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 rounded-2xl border border-brand-200 dark:border-brand-800/40 bg-brand-50/70 dark:bg-brand-900/15 p-4">
+            <div className="w-11 h-11 rounded-2xl bg-brand-500 text-ink-900 flex items-center justify-center flex-shrink-0">
+              <paymentMeta.Icon className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-ink-900 dark:text-ink-100">{paymentMeta.title}</p>
+              <p className="mt-1 text-xs text-ink-500 dark:text-ink-400">
+                {paymentStage === 'awaiting_payment'
+                  ? 'Complete the payment in the Razorpay popup. Do not close this page.'
+                  : 'We are processing your booking and payment securely.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              ['creating_booking', 'Booking request created'],
+              [payMethod === 'wallet' ? 'paying_with_wallet' : 'preparing_order', payMethod === 'wallet' ? 'Wallet debit started' : 'Razorpay order created'],
+              [payMethod === 'wallet' ? 'idle' : 'awaiting_payment', payMethod === 'wallet' ? 'Wallet payment complete' : 'Waiting for checkout completion'],
+              [payMethod === 'wallet' ? 'idle' : 'verifying_payment', payMethod === 'wallet' ? 'Verification complete' : 'Payment verification'],
+            ].map(([stageKey, label]) => {
+              const active =
+                paymentStage === stageKey ||
+                (stageKey === 'idle' && paymentStage === 'idle' && !isBusy);
+              const completedStages = ['creating_booking', 'paying_with_wallet', 'preparing_order', 'awaiting_payment', 'verifying_payment'];
+              const currentIndex = completedStages.indexOf(paymentStage);
+              const stageIndex = completedStages.indexOf(stageKey);
+              const completed = stageIndex !== -1 && currentIndex > stageIndex;
+
+              return (
+                <div key={label} className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full border flex items-center justify-center flex-shrink-0 ${
+                    completed
+                      ? 'bg-green-50 border-green-500 text-green-600 dark:bg-green-900/20 dark:text-green-400'
+                      : active
+                        ? 'bg-brand-50 border-brand-500 text-brand-600 dark:bg-brand-900/20 dark:text-brand-400'
+                        : 'bg-[var(--surface)] border-[var(--border)] text-ink-400'
+                  }`}>
+                    {active ? <Loader2 className="w-4 h-4 animate-spin" /> : completed ? <Check className="w-4 h-4" /> : <span className="text-xs font-bold">•</span>}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-ink-900 dark:text-ink-100">{label}</p>
+                    {active && <p className="text-xs text-ink-500 dark:text-ink-400">{paymentStageLabel}</p>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="rounded-2xl border border-[var(--border)] bg-surface-2/70 dark:bg-surface-3/50 p-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-ink-500">Advance payable now</span>
+              <span className="font-mono font-bold text-ink-900 dark:text-ink-100">{formatINR(advanceAmount)}</span>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -35,7 +35,7 @@ export const UPI_APPS=[
 export const BOOKING_STATUS={
   pending:    {label:'Pending',    color:'amber', dot:'#D97706'},
   confirmed:  {label:'Confirmed',  color:'green', dot:'#16A34A'},
-  in_progress:{label:'In Progress',color:'brand', dot:'#F59000'},
+  ongoing:    {label:'Ongoing',    color:'brand', dot:'#F59000'},
   completed:  {label:'Completed',  color:'neutral',dot:'#9B9890'},
   cancelled:  {label:'Cancelled',  color:'red',   dot:'#DC2626'},
 };

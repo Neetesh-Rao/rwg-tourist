@@ -5,7 +5,6 @@ import{MOCK_RIDERS,getCityById}from'@/shared/config/constants';
 export const fetchSlots=createAsyncThunk('booking/fetchSlots',async(params,{rejectWithValue})=>{
   try{
     await sleep(900);
-    // TODO: const res = await axios.get('/api/v1/slots', { params });
     let riders=[...MOCK_RIDERS];
     if(params.genderPreference==='female_first') riders.sort((a,b)=>a.gender==='female'?-1:1);
     else if(params.genderPreference==='male_first') riders.sort((a,b)=>a.gender==='male'?-1:1);
@@ -15,7 +14,6 @@ export const fetchSlots=createAsyncThunk('booking/fetchSlots',async(params,{reje
 
 export const estimatePrice=createAsyncThunk('booking/estimatePrice',async(params)=>{
   await sleep(200);
-  // TODO: const res = await axios.post('/api/v1/pricing/estimate', params);
   const city=getCityById(params.cityId);
   return calcEstimate({city,rideTypeId:params.rideTypeId,hoursBooked:params.hoursBooked});
 });
@@ -23,7 +21,6 @@ export const estimatePrice=createAsyncThunk('booking/estimatePrice',async(params
 export const createBooking=createAsyncThunk('booking/create',async(_,{rejectWithValue,getState})=>{
   try{
     await sleep(1400);
-    // TODO: const res = await axios.post('/api/v1/bookings', payload);
     const{draft,selectedSlot,priceEstimate}=getState().booking;
     return createMockBooking(draft,selectedSlot?.rider,priceEstimate);
   }catch{return rejectWithValue('Booking failed. Please try again.');}
@@ -31,7 +28,6 @@ export const createBooking=createAsyncThunk('booking/create',async(_,{rejectWith
 
 export const loadMyBookings=createAsyncThunk('booking/loadMine',async()=>{
   await sleep(300);
-  // TODO: const res = await axios.get('/api/v1/bookings/my');
   return ls.get('rwg_bookings',[]);
 });
 
@@ -46,6 +42,8 @@ const bookingSlice=createSlice({
     setStep:(s,a)=>{s.step=a.payload;},
     updateDraft:(s,a)=>{s.draft={...s.draft,...a.payload};},
     selectSlot:(s,a)=>{s.selectedSlot=a.payload;},
+    setBookings:(s,a)=>{s.bookings=a.payload||[];},
+    bookingCreated:(s,a)=>{s.currentBooking=a.payload;s.bookings.unshift(a.payload);},
     addStop:(s,a)=>{if(!s.draft.stops)s.draft.stops=[];s.draft.stops.push(a.payload);},
     removeStop:(s,a)=>{s.draft.stops=s.draft.stops.filter(st=>st.id!==a.payload);},
     resetWizard:s=>{s.step=1;s.draft={stops:[]};s.availableSlots=[];s.selectedSlot=null;s.priceEstimate=null;s.error=null;},
@@ -64,5 +62,5 @@ const bookingSlice=createSlice({
      .addCase(loadMyBookings.fulfilled,(s,a)=>{s.bookings=a.payload;});
   },
 });
-export const{setStep,updateDraft,selectSlot,addStop,removeStop,resetWizard,startRide,endRide,clearError}=bookingSlice.actions;
+export const{setStep,updateDraft,selectSlot,setBookings,bookingCreated,addStop,removeStop,resetWizard,startRide,endRide,clearError}=bookingSlice.actions;
 export default bookingSlice.reducer;

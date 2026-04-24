@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Compass, MapPin, Calendar, Award, ChevronRight, Zap, Star } from 'lucide-react';
 import { useAppDispatch, useUser, useBookings } from '@/app/store/store';
-import { loadMyBookings } from '@/features/booking/model/bookingSlice';
+import { loadMyBookings } from '@/app/store/slices/bookingSlice';
 import PageWrapper from '@/shared/layout/PageWrapper/PageWrapper';
 import Button from '@/shared/ui/Button/Button';
 import Card from '@/shared/ui/Card/Card';

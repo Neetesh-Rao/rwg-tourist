@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Phone, Eye, EyeOff, ChevronRight } from 'lucide-react';
 import { useAppDispatch, useAuth } from '@/app/store/store';
-import { registerUser, clearError } from '@/features/auth/model/authSlice';
+import { registerUser, clearError } from '@/app/store/slices/authSlice';
 import AuthLayout from '@/shared/layout/AuthLayout/AuthLayout';
 import Button from '@/shared/ui/Button/Button';
 import Input from '@/shared/ui/Input/Input';
