@@ -88,7 +88,7 @@ export default function Navbar() {
               ) : (
                 <div className="hidden md:flex items-center gap-2">
                   <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>Sign in</Button>
-                  <Button variant="primary" size="sm" onClick={() => navigate('/register')}>Get Started</Button>
+                  <Button variant="primary" size="sm" onClick={() => navigate('/login')}>Get Started</Button>
                 </div>
               )}
 
