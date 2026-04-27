@@ -65,7 +65,7 @@ export default function Navbar() {
                   </button>
                   <div className="relative hidden md:block">
                     <button onClick={() => setDrop(!drop)} className="flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-surface-2 dark:hover:bg-surface-3 transition-all">
-                      <Avatar name={user?.name} size="sm" />
+                      <Avatar name={user?.name} src={user?.profileImage || user?.avatar} size="sm" />
                       <span className="text-sm font-medium text-ink-800 dark:text-ink-200">{user?.name?.split(' ')[0]}</span>
                     </button>
                     {drop && (
@@ -73,7 +73,7 @@ export default function Navbar() {
                         <div className="fixed inset-0" onClick={() => setDrop(false)} />
                         <div className="absolute right-0 top-full mt-2 w-52 card !p-2 animate-scale-in z-50">
                           <Link to="/profile" onClick={() => setDrop(false)} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-surface-2 dark:hover:bg-surface-3 transition-all">
-                            <Avatar name={user?.name} size="xs" />
+                            <Avatar name={user?.name} src={user?.profileImage || user?.avatar} size="xs" />
                             <div className="min-w-0"><p className="text-sm font-semibold text-ink-900 dark:text-ink-100 truncate">{user?.name}</p><p className="text-xs text-ink-400 truncate">{user?.email}</p></div>
                           </Link>
                           <div className="h-px bg-[var(--border)] my-1" />
@@ -104,7 +104,7 @@ export default function Navbar() {
             {isAuthenticated ? (
               <>
                 <Link to="/profile" className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-surface-2 dark:hover:bg-surface-3">
-                  <Avatar name={user?.name} size="sm" />
+                  <Avatar name={user?.name} src={user?.profileImage || user?.avatar} size="sm" />
                   <div><p className="text-sm font-semibold text-ink-900 dark:text-ink-100">{user?.name}</p><p className="text-xs text-ink-400">{user?.email}</p></div>
                 </Link>
                 <div className="h-px bg-[var(--border)] my-1" />

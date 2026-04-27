@@ -17,6 +17,7 @@ import {
   ChevronDown,
   MessageCircle,
   Info,
+   Camera
 } from 'lucide-react';
 import { useAppDispatch, useBookings, useUser, useAuth, useWallet } from '@/app/store/store';
 import { loadMyBookings, setBookings } from '@/app/store/slices/bookingSlice';
@@ -529,6 +530,8 @@ export function ProfilePage() {
     refetchOnMountOrArgChange: true,
   });
   const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
+  // 2️⃣ ProfilePage ke andar state add karo
+const [selectedImage, setSelectedImage] = useState(null);
   const [form, setForm] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -583,6 +586,33 @@ export function ProfilePage() {
       }));
     }
   }
+  // 3️⃣ handle image upload function add karo
+async function handleImageChange(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("profileImage", file);
+
+  try {
+    const response = await updateProfile(formData).unwrap();
+
+    const updatedUser = response?.data || response;
+    dispatch(setAuthSession({ user: { ...user, ...updatedUser }, token }));
+
+    dispatch(pushToast({
+      type: "success",
+      title: "Photo updated!",
+      message: "Profile image uploaded successfully."
+    }));
+  } catch (error) {
+    dispatch(pushToast({
+      type: "error",
+      title: "Upload failed",
+      message: error?.data?.message || "Could not upload image."
+    }));
+  }
+}
 
   const isLoading = isUpdatingProfile || isProfileLoading || isProfileFetching;
 
@@ -595,7 +625,26 @@ export function ProfilePage() {
         </div>
 
         <Card className="!p-6 mb-6 text-center">
-          <Avatar name={user?.name} size="2xl" className="mx-auto mb-4" />
+         <div className="relative w-fit mx-auto mb-4">
+
+  <Avatar
+    name={user?.name}
+    src={user?.profileImage}
+    size="2xl"
+  />
+
+  <label className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center cursor-pointer shadow-lg hover:scale-105 transition">
+    <Camera className="w-5 h-5" />
+
+    <input
+      type="file"
+      accept="image/*"
+      hidden
+      onChange={handleImageChange}
+    />
+  </label>
+
+</div>
           <h2 className="font-display text-xl font-bold text-ink-900 dark:text-ink-100">{user?.name}</h2>
           <p className="text-sm text-ink-400 mt-1">{user?.email}</p>
           <div className="flex items-center justify-center gap-4 mt-4 text-sm">
