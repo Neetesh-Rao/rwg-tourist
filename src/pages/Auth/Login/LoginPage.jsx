@@ -10,6 +10,8 @@ import Input from '@/shared/ui/Input/Input';
 import Divider from '@/shared/ui/Divider/Divider';
 import OTPInput from '@/shared/ui/OTPInput/OTPInput';
 import { genId, isValidPhone } from '@/shared/lib/helpers';
+import toast from 'react-hot-toast';
+
 
 const OTP_LENGTH = 6;
 
@@ -92,6 +94,11 @@ export default function LoginPage() {
       setStep('otp');
       setOtp(Array(OTP_LENGTH).fill(''));
       setInfoMessage(getApiMessage(payload, `OTP sent to +91 ${phone}`));
+      const otpCode = payload?.otp || payload?.data?.otp;
+
+      if (otpCode) {
+        toast.success(`Your OTP is ${otpCode}`);
+      }
     } catch (error) {
       setApiError(getApiMessage(error?.data, 'Could not send OTP. Please try again.'));
     }

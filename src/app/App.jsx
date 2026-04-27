@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store, useAuth } from '@/app/store/store';
 import 'leaflet/dist/leaflet.css';
+import { Toaster } from 'react-hot-toast';
 
 import HomePage from '@/pages/Home/HomePage';
 import RegisterPage from '@/pages/Auth/Register/RegisterPage';
@@ -31,7 +32,12 @@ function PublicRoute({ children }) {
 
 function AppRoutes() {
   return (
+    <>     <Toaster
+      position="bottom-right"
+      reverseOrder={false}
+   />
     <Routes>
+    
       <Route path="/"         element={<HomePage />} />
       {/* <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} /> */}
       <Route path="/login"    element={<PublicRoute><LoginPage /></PublicRoute>} />
@@ -44,6 +50,7 @@ function AppRoutes() {
       <Route path="/Transactions"   element={<Navigate to="/transactions" replace />} />
       <Route path="*"         element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }
 
