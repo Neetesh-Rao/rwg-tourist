@@ -91,14 +91,21 @@ export default function LoginPage() {
 
     try {
       const payload = await sendOtp({ phone }).unwrap();
-      setStep('otp');
-      setOtp(Array(OTP_LENGTH).fill(''));
-      setInfoMessage(getApiMessage(payload, `OTP sent to +91 ${phone}`));
-      const otpCode = payload?.otp || payload?.data?.otp;
 
-      if (otpCode) {
-        toast.success(`Your OTP is ${otpCode}`);
-      }
+setStep('otp');
+
+const otpCode = payload?.otp || payload?.data?.otp;
+
+// 👇 AUTO FILL LOGIC
+if (otpCode) {
+  setOtp(otpCode.toString().split(''));
+  toast.success(`OTP Auto-filled: ${otpCode}`);
+} else {
+  setOtp(Array(OTP_LENGTH).fill(''));
+}
+
+setInfoMessage(getApiMessage(payload, `OTP sent to +91 ${phone}`));
+  
     } catch (error) {
       setApiError(getApiMessage(error?.data, 'Could not send OTP. Please try again.'));
     }
