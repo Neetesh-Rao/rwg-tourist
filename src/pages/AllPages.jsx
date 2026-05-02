@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+
 import {
   MapPin,
   Shield,
@@ -52,9 +53,10 @@ const PROFILE_GENDER_OPTIONS = [
 ];
 
 const normalizeBookingStatus = (status) => {
+  if (status === 'searching') return 'pending';
+  if (status === 'assigned') return 'confirmed';
   if (status === 'booked') return 'pending';
   if (status === 'in_progress') return 'ongoing';
-  if (status === 'assigned') return 'confirmed';
   return status || 'pending';
 };
 
@@ -69,9 +71,9 @@ const normalizeBooking = (booking) => ({
   pickupLat: booking?.pickupLocation?.lat || booking?.pickupLat || null,
   pickupLng: booking?.pickupLocation?.lng || booking?.pickupLng || null,
   stops: booking?.stops || [],
-  status: normalizeBookingStatus(booking?.status || booking?.bookingStatus),
-  otp: booking?.otp || booking?.rideOTP || booking?.rideOtp || '',
-  rider: booking?.rider || booking?.guide || null,
+  status: normalizeBookingStatus(booking?.bookingStatus || booking?.status),
+  otp: booking?.rideOTP || booking?.otp || booking?.rideOtp || '',
+  rider: (typeof booking?.riderId === 'object' ? booking.riderId : null) || booking?.rider || booking?.guide || null,
   estimatedPrice: booking?.pricing ? {
     estimatedMin: booking.pricing?.estimatedRange?.min || 0,
     estimatedMax: booking.pricing?.estimatedRange?.max || 0,
@@ -92,7 +94,14 @@ function BookingDetail({ booking, onTrack,onClick }) {
         <div>
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <h3 className="font-display text-base font-bold text-ink-900 dark:text-ink-100">{booking.city}</h3>
-            <Badge variant={bvar} dot={cfg.dot}>{cfg.label}</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant={bvar} dot={cfg.dot}>{cfg.label}</Badge>
+              {booking.otp && (
+                <span className="text-[10px] font-bold text-green-600 bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded border border-green-200 dark:border-green-800/40">
+                  OTP: {booking.otp}
+                </span>
+              )}
+            </div>
           </div>
           <p className="text-xs text-ink-400">{formatDate(booking.date)} � {booking.startTime}-{booking.endTime}</p>
         </div>
@@ -128,13 +137,13 @@ function BookingDetail({ booking, onTrack,onClick }) {
         </div>
       )}
 
-      {['confirmed', 'ongoing', 'pending'].includes(booking.status) && (
+      {['assigned', 'confirmed', 'ongoing', 'pending', 'searching'].includes(booking.status) && (
         <div className="flex items-center gap-2 w-full pt-1">
           <Button 
             className="flex-1" 
             variant="primary" 
             size="sm" 
-            disabled={booking.status === 'pending'}
+            disabled={['pending', 'searching'].includes(booking.status)}
             onClick={(e) => { e.stopPropagation(); onTrack(booking); }} 
             icon={<Navigation2 className="w-3.5 h-3.5"/>}
           >
@@ -225,13 +234,23 @@ function BookingDetail({ booking, onTrack,onClick }) {
 function VerticalStepper({ booking, onClose }) {
   const navigate = useNavigate();
   const [showRiderDetails, setShowRiderDetails] = useState(false);
+  const [viewImage, setViewImage] = useState(null);
   
   let activeStep = 0;
   let isCancelled = booking.status === 'cancelled';
-  if(isCancelled) activeStep = 1;
-  else if(booking.status === 'pending') activeStep = 1;
-  else if(['confirmed', 'ongoing'].includes(booking.status)) activeStep = 3;
-  else if(booking.status === 'completed') activeStep = 4;
+
+  // Logic for the new status flow
+  if (isCancelled) {
+    activeStep = 1;
+  } else if (booking.status === 'completed') {
+    activeStep = 4;
+  } else if (booking.status === 'ongoing' || booking.status === 'assigned') {
+    activeStep = 3;
+  } else if (booking.status === 'searching') {
+    activeStep = 2;
+  } else if (booking.status === 'pending') {
+    activeStep = 1;
+  }
 
   const steps = [
     { 
@@ -240,17 +259,17 @@ function VerticalStepper({ booking, onClose }) {
     },
     {
       label: 'Admin Approval',
-      description: isCancelled ? 'Your booking was cancelled.' : booking.status === 'pending' ? 'Verifying details and finding the best match...' : 'Booking approved by admin.',
+      description: isCancelled ? 'Your booking was cancelled.' : (booking.status === 'pending') ? 'Verifying details and getting things ready...' : 'Booking approved by admin.',
       isError: isCancelled
     },
     {
       label: 'Guide Assignment',
-      description: booking.rider ? `Assigned to ${booking.rider.name}.` : 'Matching you with a verified guide...',
+      description: booking.rider ? `Assigned to ${booking.rider.name}.` : (booking.status === 'searching') ? 'Matching you with a verified guide...' : 'Awaiting assignment.',
     },
     {
       label: 'Ride Details',
-      description: booking.status === 'completed' ? 'Your ride was successfully completed!' : (booking.status === 'confirmed' || booking.status === 'ongoing') ? 'Your guide is ready. View details below.' : 'Awaiting confirmation.',
-      content: (booking.status === 'confirmed' || booking.status === 'ongoing') ? (
+      description: booking.status === 'completed' ? 'Your ride was successfully completed!' : (booking.status === 'assigned' || booking.status === 'ongoing') ? 'Your guide is ready. View details below.' : 'Ride details will appear here soon.',
+      content: (booking.status === 'assigned' || booking.status === 'ongoing') ? (
         <div className="space-y-3 mt-3 bg-surface-2 dark:bg-surface-3 p-4 rounded-2xl border border-[var(--border)] overflow-hidden relative">
           
           <div className="flex items-center gap-3">
@@ -277,8 +296,15 @@ function VerticalStepper({ booking, onClose }) {
               {/* Rich Contact Card */}
               <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand-100 to-brand-200 dark:from-brand-900/30 dark:to-brand-800/20 flex flex-shrink-0 items-center justify-center font-display text-xl font-bold text-brand-700 dark:text-brand-400">
-                    {booking.rider?.name?.charAt(0) || 'G'}
+                  <div 
+                    className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-brand-100 to-brand-200 dark:from-brand-900/30 dark:to-brand-800/20 flex flex-shrink-0 items-center justify-center font-display text-xl font-bold text-brand-700 dark:text-brand-400 border border-[var(--border)] cursor-zoom-in active:scale-95 transition-transform"
+                    onClick={() => booking.rider?.profileImage && setViewImage(booking.rider.profileImage)}
+                  >
+                    {booking.rider?.profileImage ? (
+                      <img src={booking.rider.profileImage} alt={booking.rider.name} className="w-full h-full object-cover" />
+                    ) : (
+                      booking.rider?.name?.charAt(0) || 'G'
+                    )}
                   </div>
                   <div>
                     <p className="font-semibold text-ink-900 dark:text-ink-100 text-sm flex items-center gap-1.5">
@@ -286,7 +312,9 @@ function VerticalStepper({ booking, onClose }) {
                       {booking.rider?.rating && <span className="text-[10px] font-bold text-brand-500 bg-brand-50 border border-brand-200 dark:bg-brand-900/40 dark:border-brand-800/50 px-1 py-0.5 rounded">★ {booking.rider.rating}</span>}
                     </p>
                     <p className="text-xs text-ink-500 font-mono mt-0.5 tracking-wide">{booking.rider?.phone || '+91 98765 43210'}</p>
-                    <p className="text-[11px] text-ink-400 font-medium mt-1 uppercase tracking-wider">{booking.rider?.vehicleType || 'Vehicle'} • {booking.rider?.vehicleNumber || 'XXXX'}</p>
+                    <p className="text-[11px] text-ink-400 font-medium mt-1 uppercase tracking-wider">
+                      {booking.rider?.vehicleModel ? `${booking.rider.vehicleModel} (${booking.rider.vehicleType})` : booking.rider?.vehicleType || 'Vehicle'} • {booking.rider?.vehicleNumber || 'XXXX'}
+                    </p>
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
@@ -370,6 +398,28 @@ function VerticalStepper({ booking, onClose }) {
           </div>
         )
       })}
+      
+      {/* Image Viewer Modal */}
+      <Modal
+        open={!!viewImage}
+        onClose={() => setViewImage(null)}
+        title="View Image"
+        className="!p-0 overflow-hidden bg-black/90"
+      >
+        <div className="relative w-full aspect-square sm:aspect-auto sm:h-[80vh] flex items-center justify-center p-2">
+          <img 
+            src={viewImage} 
+            alt="Enlarged view" 
+            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+          />
+          <button 
+            onClick={() => setViewImage(null)}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+          >
+            <PlusIcon className="w-6 h-6 rotate-45" />
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }
