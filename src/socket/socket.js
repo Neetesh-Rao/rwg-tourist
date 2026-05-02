@@ -5,7 +5,7 @@ let registeredTouristId = null;
 let isConnectHandlerBound = false;
 
 const BASE_URL =
-  import.meta.env.VITE_APP_API_URL?.replace("/api", "") ||
+  import.meta.env.VITE_API_URL?.replace("/api", "") ||
   "http://localhost:9999";
 
 export const connectTouristSocket = (userId) => {
