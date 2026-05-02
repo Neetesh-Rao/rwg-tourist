@@ -12,6 +12,8 @@ import DashboardPage from '@/pages/Dashboard/DashboardPage';
 import BookingPage from '@/pages/Booking/BookingPage';
 import { BookingsPage, TrackingPage, ProfilePage, WalletPage } from '@/pages/AllPages';
 
+import SocketManager from "../socket/SocketManager";
+
 // Guards
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -50,6 +52,7 @@ function AppRoutes() {
       <Route path="/Transactions"   element={<Navigate to="/transactions" replace />} />
       <Route path="*"         element={<Navigate to="/" replace />} />
     </Routes>
+      <SocketManager />
     </>
   );
 }

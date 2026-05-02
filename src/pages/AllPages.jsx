@@ -53,8 +53,8 @@ const PROFILE_GENDER_OPTIONS = [
 ];
 
 const normalizeBookingStatus = (status) => {
-  if (status === 'searching') return 'searching';
-  if (status === 'assigned') return 'assigned';
+  if (status === 'searching') return 'pending';
+  if (status === 'assigned') return 'confirmed';
   if (status === 'booked') return 'pending';
   if (status === 'in_progress') return 'ongoing';
   return status || 'pending';
@@ -72,7 +72,7 @@ const normalizeBooking = (booking) => ({
   pickupLng: booking?.pickupLocation?.lng || booking?.pickupLng || null,
   stops: booking?.stops || [],
   status: normalizeBookingStatus(booking?.bookingStatus || booking?.status),
-  otp: booking?.rideOTP || booking?.otp || '',
+  otp: booking?.rideOTP || booking?.otp || booking?.rideOtp || '',
   rider: (typeof booking?.riderId === 'object' ? booking.riderId : null) || booking?.rider || booking?.guide || null,
   estimatedPrice: booking?.pricing ? {
     estimatedMin: booking.pricing?.estimatedRange?.min || 0,
