@@ -90,14 +90,6 @@ const loadRazorpayScript = () =>
       resolve(true);
       return;
     }
-
-    const existingScript = document.querySelector('script[data-razorpay="checkout"]');
-    if (existingScript) {
-      existingScript.addEventListener('load', () => resolve(true), { once: true });
-      existingScript.addEventListener('error', () => resolve(false), { once: true });
-      return;
-    }
-
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
@@ -111,62 +103,17 @@ const getRazorpayOrderData = (payload) => {
   const root = payload || {};
   const data = root?.data || {};
   const meta = data?.meta || root?.meta || {};
-  const nestedOrder =
-    data?.order ||
-    root?.order ||
-    data?.razorpayOrder ||
-    root?.razorpayOrder ||
-    data?.data?.order ||
-    root?.data?.data?.order ||
-    data?.result?.order ||
-    root?.result?.order;
-
-  const order = nestedOrder || data || root;
-
-  const key =
-    data?.key ||
-    data?.keyId ||
-    data?.key_id ||
-    data?.razorpay_key ||
-    data?.razorpayKey ||
-    root?.key ||
-    root?.keyId ||
-    root?.key_id ||
-    root?.razorpay_key ||
-    root?.razorpayKey ||
-    order?.key ||
-    order?.keyId ||
-    order?.key_id ||
-    order?.razorpay_key ||
-    meta?.key ||
-    meta?.keyId ||
-    meta?.key_id ||
-    meta?.razorpay_key ||
-    import.meta.env.VITE_RAZORPAY_KEY_ID;
-
-  const orderId =
-    order?.id ||
-    order?.orderId ||
-    order?.order_id ||
-    order?.razorpayOrderId ||
-    data?.orderId ||
-    data?.order_id ||
-    data?.razorpayOrderId ||
-    root?.orderId ||
-    root?.order_id ||
-    root?.razorpayOrderId ||
-    meta?.orderId ||
-    meta?.order_id;
-
+  const order = data?.order || root?.order || data || root;
+  const key = data?.key || root?.key || import.meta.env.VITE_RAZORPAY_KEY_ID;
+  const orderId = order?.id || data?.orderId || root?.orderId;
   return {
     key,
     orderId,
-    amount: order?.amount || order?.amount_due || data?.amount || data?.amount_due || root?.amount || root?.amount_due,
-    currency: order?.currency || data?.currency || root?.currency || meta?.currency || 'INR',
+    amount: order?.amount || data?.amount || root?.amount,
+    currency: order?.currency || data?.currency || 'INR',
   };
 };
 
-// ── Step indicator ─────────────────────────────────────
 function StepBar({ current }) {
   return (
     <div className="flex items-center mb-10">
@@ -193,7 +140,6 @@ function StepBar({ current }) {
   );
 }
 
-// ── Step 1: Trip Details ───────────────────────────────
 function TripDetails() {
   const dispatch = useAppDispatch();
   const draft = useDraft();
@@ -237,8 +183,6 @@ function TripDetails() {
           value={form.date} onChange={e => set('date', e.target.value)}
         />
       </div>
-
-      {/* Ride type */}
       <div className="space-y-2">
         <label className="text-xs font-semibold uppercase tracking-widest text-ink-500 dark:text-ink-400">Tour duration *</label>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -254,13 +198,10 @@ function TripDetails() {
           ))}
         </div>
       </div>
-
       <div className="grid grid-cols-2 gap-4">
         <Input label="Start time" type="time" leftIcon={<Clock className="w-4 h-4" />} value={form.startTime} onChange={e => set('startTime', e.target.value)} />
         <Input label="End time"   type="time" leftIcon={<Clock className="w-4 h-4" />} value={form.endTime}   onChange={e => set('endTime',   e.target.value)} />
       </div>
-
-      {/* Pickup with map */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <label className="text-xs font-semibold uppercase tracking-widest text-ink-500 dark:text-ink-400">Pickup location *</label>
@@ -284,7 +225,6 @@ function TripDetails() {
           value={form.pickupAddress} onChange={e => set('pickupAddress', e.target.value)}
           hint="Your guide will navigate directly to your location" />
       </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Select label="Guide gender preference"
           options={[{ value:'female_first',label:'Female guide preferred' },{ value:'male_first',label:'Male guide preferred' },{ value:'any',label:'No preference' }]}
@@ -293,7 +233,6 @@ function TripDetails() {
           options={LANGUAGES.map(l => ({ value:l, label:l }))}
           value={form.preferredLanguage} onChange={e => set('preferredLanguage', e.target.value)} />
       </div>
-
       <div className="flex justify-end pt-2">
         <Button variant="primary" size="lg" onClick={handleNext} disabled={!form.city || !form.date || !form.pickupAddress} iconRight={<ChevronRight className="w-4 h-4" />}>
           Add Stops
@@ -303,98 +242,6 @@ function TripDetails() {
   );
 }
 
-// ── Step 2: Choose Guide ───────────────────────────────
-// function ChooseGuide() {
-//   const dispatch = useAppDispatch();
-//   const slots    = useSlots();
-//   const estimate = useEstimate();
-//   const { isLoading } = useBooking();
-//   const [selId, setSelId] = useState('');
-
-//   function handleNext() {
-//     if (!selId) return;
-//     const slot = slots.find(s => s.id === selId);
-//     dispatch(selectSlot(slot));
-//     dispatch(updateDraft({ selectedSlotId: selId }));
-//     dispatch(setStep(3));
-//   }
-
-//   if (isLoading) return (
-//     <div className="space-y-4">
-//       {[1,2,3].map(i => <Skeleton key={i} className="h-48 rounded-2xl" style={{ animationDelay: `${i*100}ms` }} />)}
-//     </div>
-//   );
-
-//   return (
-//     <div className="space-y-4 animate-fade-up">
-//       {/* Price banner */}
-//       {estimate && (
-//         <Card className="!p-4 border-brand-200 dark:border-brand-800/40 bg-brand-50/60 dark:bg-brand-900/10">
-//           <div className="flex items-center justify-between flex-wrap gap-3">
-//             <div>
-//               <p className="text-xs text-brand-600 dark:text-brand-400 font-semibold uppercase tracking-wider mb-1">Estimated price range</p>
-//               <p className="font-display text-2xl font-bold text-gradient">{formatINR(estimate.estimatedMin)} – {formatINR(estimate.estimatedMax)}</p>
-//             </div>
-//             <div className="text-right">
-//               <p className="text-xs text-ink-400 mb-0.5">Pay now (30% advance)</p>
-//               <p className="font-display text-xl font-bold text-brand-600 dark:text-brand-400">{formatINR(estimate.advanceAmount)}</p>
-//             </div>
-//           </div>
-//         </Card>
-//       )}
-
-//       {/* Guide cards */}
-//       {slots.map(slot => (
-//         <div key={slot.id} onClick={() => setSelId(slot.id)}
-//           className={`card !p-5 cursor-pointer transition-all duration-250 ${selId === slot.id ? 'card-selected' : 'card-active'}`}>
-//           {selId === slot.id && (
-//             <div className="absolute top-4 right-4 w-6 h-6 bg-brand-500 rounded-full flex items-center justify-center">
-//               <Check className="w-3.5 h-3.5 text-white" />
-//             </div>
-//           )}
-//           <div className="flex items-start gap-4">
-//             <div className="relative flex-shrink-0">
-//               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-100 to-brand-200 dark:from-brand-900/30 dark:to-brand-800/20 flex items-center justify-center font-display text-2xl font-bold text-brand-700 dark:text-brand-400">
-//                 {slot.rider.name.charAt(0)}
-//               </div>
-//               <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[var(--surface)] ${slot.rider.isOnline ? 'bg-green-500' : 'bg-ink-300 dark:bg-ink-600'}`} />
-//             </div>
-//             <div className="flex-1 min-w-0">
-//               <div className="flex items-center gap-2 flex-wrap mb-1">
-//                 <h3 className="font-semibold text-ink-900 dark:text-ink-100">{slot.rider.name}</h3>
-//                 <Badge variant={slot.rider.gender === 'female' ? 'brand' : 'neutral'}>{slot.rider.gender === 'female' ? '♀ Female' : '♂ Male'}</Badge>
-//                 {slot.rider.isOnline && <Badge variant="green">Online</Badge>}
-//               </div>
-//               <StarRating rating={slot.rider.rating} count={slot.rider.totalRides} />
-//               <p className="text-xs text-ink-500 mt-2 line-clamp-2">{slot.rider.bio}</p>
-//               <div className="flex flex-wrap gap-1.5 mt-2">
-//                 {slot.rider.languages.map(l => <Badge key={l} variant="neutral" size="xs">{l}</Badge>)}
-//               </div>
-//               <div className="flex flex-wrap gap-1.5 mt-1.5">
-//                 {slot.rider.guideExpertise.map(e => <Badge key={e} variant="blue" size="xs">{e}</Badge>)}
-//               </div>
-//             </div>
-//             <div className="text-right flex-shrink-0">
-//               <p className="text-sm font-bold text-ink-900 dark:text-ink-100">{formatINR(slot.rider.pricePerHour)}<span className="text-xs text-ink-400 font-normal">/hr</span></p>
-//               <p className="text-xs text-ink-400 mt-0.5">₹{slot.rider.pricePerKm}/km</p>
-//             </div>
-//           </div>
-//           <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between text-xs text-ink-400">
-//             <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {slot.startTime}–{slot.endTime} · {slot.rider.vehicleType}</span>
-//             <span>{slot.rider.completionRate}% completion</span>
-//           </div>
-//         </div>
-//       ))}
-
-//       <div className="flex justify-between pt-2">
-//         <Button variant="ghost" onClick={() => dispatch(setStep(1))} icon={<ChevronLeft className="w-4 h-4" />}>Back</Button>
-//         <Button variant="primary" size="lg" disabled={!selId} onClick={handleNext} iconRight={<ChevronRight className="w-4 h-4" />}>Continue</Button>
-//       </div>
-//     </div>
-//   );
-// }
-
-// ── Step 2: Add Stops ──────────────────────────────────
 function AddStops() {
   const dispatch = useAppDispatch();
   const draft    = useDraft();
@@ -416,23 +263,37 @@ function AddStops() {
       const found = current.find(s => s.name === stop.name);
       if (found) dispatch(removeStop(found.id));
     } else {
-      dispatch(addStop({ id: Date.now().toString(), name: stop.name, address: `${stop.name}, ${draft.city}`, estimatedDuration: stop.duration, lat: stop.lat, lng: stop.lng }));
+      dispatch(addStop({ 
+        id: Date.now().toString(), 
+        name: stop.name, 
+        location: {
+          address: `${stop.name}, ${draft.city}`, 
+          lat: stop.lat, 
+          lng: stop.lng 
+        },
+        duration: stop.duration 
+      }));
     }
   }
 
   function addCustom() {
     if (!custom.trim()) return;
-    const matchedStop = cityStops.find(
-      (stop) => stop.name.toLowerCase() === custom.trim().toLowerCase()
-    );
+
+    // Search current city first, then all cities (case-insensitive)
+    const allStops = Object.values(CITY_STOPS).flat();
+    const matchedStop =
+      cityStops.find((s) => s.name.toLowerCase() === custom.trim().toLowerCase()) ||
+      allStops.find((s) => s.name.toLowerCase() === custom.trim().toLowerCase());
 
     dispatch(addStop({
       id: Date.now().toString(),
       name: matchedStop?.name || custom.trim(),
-      address: matchedStop ? `${matchedStop.name}, ${draft.city}` : custom.trim(),
-      estimatedDuration: matchedStop?.duration || 45,
-      lat: matchedStop?.lat,
-      lng: matchedStop?.lng,
+      location: {
+        address: matchedStop ? `${matchedStop.name}, ${draft.city}` : custom.trim(),
+        lat: matchedStop?.lat || null,
+        lng: matchedStop?.lng || null,
+      },
+      duration: matchedStop?.duration || 45,
       type: matchedStop?.category || 'Custom',
       category: matchedStop?.category || 'Custom',
     }));
@@ -440,7 +301,7 @@ function AddStops() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-up">
+    <div className="space-y-6 animate-fade-up">
       <Card className="!p-4 border-brand-200 dark:border-brand-800/40 bg-brand-50/60 dark:bg-brand-900/10">
         <div className="flex items-center gap-2 text-brand-700 dark:text-brand-400 text-sm">
           <Zap className="w-4 h-4 flex-shrink-0" />
@@ -467,7 +328,6 @@ function AddStops() {
         </div>
       ))}
 
-      {/* Custom stop */}
       <div className="flex gap-2">
         <div className="flex-1">
           <Input
@@ -482,16 +342,13 @@ function AddStops() {
           />
           <datalist id="city-stop-suggestions">
             {suggestedStops.map((stop) => (
-              <option key={stop.name} value={stop.name}>
-                {stop.category}
-              </option>
+              <option key={stop.name} value={stop.name}>{stop.category}</option>
             ))}
           </datalist>
         </div>
         <Button variant="secondary" onClick={addCustom} icon={<Plus className="w-4 h-4" />}>Add</Button>
       </div>
 
-      {/* Selected stops list */}
       {current.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs text-ink-400 uppercase tracking-wider font-semibold">Your itinerary — {current.length} stop{current.length !== 1 ? 's' : ''}</p>
@@ -500,7 +357,7 @@ function AddStops() {
               <div className="w-6 h-6 rounded-full bg-brand-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{i+1}</div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-ink-900 dark:text-ink-100">{stop.name}</p>
-                <p className="text-xs text-ink-400">~{stop.estimatedDuration} min</p>
+                <p className="text-xs text-ink-400">~{stop.duration || stop.estimatedDuration} min</p>
               </div>
               <button onClick={() => dispatch(removeStop(stop.id))} className="text-ink-300 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all">
                 <X className="w-4 h-4" />
@@ -522,7 +379,6 @@ function AddStops() {
   );
 }
 
-// ── Step 3: Review & Pay ───────────────────────────────
 function ReviewPay() {
   const dispatch  = useAppDispatch();
   const navigate  = useNavigate();
@@ -544,6 +400,7 @@ function ReviewPay() {
   const paymentMeta = PAYMENT_META[payMethod] || PAYMENT_META.upi;
   const isBusy = isLoading || isPayingWithWallet || isCreatingOrder || isVerifyingPayment;
   const canUseWallet = walletBalance >= advanceAmount;
+
   const paymentStageLabel = {
     idle: 'Ready to pay',
     creating_booking: 'Creating booking',
@@ -555,62 +412,31 @@ function ReviewPay() {
 
   const openRazorpayCheckout = ({ orderPayload, bookingId }) =>
     new Promise((resolve, reject) => {
-      const {
-        key: razorpayKey,
-        orderId,
-        amount,
-        currency,
-      } = getRazorpayOrderData(orderPayload);
-
-      if (!window.Razorpay || !orderId) {
-        console.error('Razorpay order payload missing order id:', orderPayload);
-        reject(new Error('Razorpay order id is missing from create-order response.'));
-        return;
-      }
-
-      if (!razorpayKey) {
-        console.error('Razorpay key missing. Add VITE_RAZORPAY_KEY_ID or return key from create-order:', orderPayload);
-        reject(new Error('Razorpay key is missing. Add VITE_RAZORPAY_KEY_ID in .env or return the key from create-order API.'));
-        return;
-      }
+      const { key: razorpayKey, orderId, amount, currency } = getRazorpayOrderData(orderPayload);
+      if (!window.Razorpay || !orderId) { reject(new Error('Razorpay order missing.')); return; }
 
       const razorpay = new window.Razorpay({
         key: razorpayKey,
         amount,
         currency,
         name: 'Ride With Guide',
-        description: `Advance payment for booking ${bookingId}`,
+        description: `Advance for booking ${bookingId}`,
         order_id: orderId,
-        prefill: {
-          name: user?.name || '',
-          email: user?.email || '',
-          contact: user?.phone || '',
-        },
-        notes: {
-          bookingId,
-        },
-        handler: async (paymentResponse) => {
+        prefill: { name: user?.name || '', email: user?.email || '', contact: user?.phone || '' },
+        handler: async (res) => {
           try {
             setPaymentStage('verifying_payment');
-            const verifyResponse = await verifyPayment({
-              razorpayOrderId: paymentResponse.razorpay_order_id,
-              razorpayPaymentId: paymentResponse.razorpay_payment_id,
-              razorpaySignature: paymentResponse.razorpay_signature,
+            const verifyRes = await verifyPayment({
+              razorpayOrderId: res.razorpay_order_id,
+              razorpayPaymentId: res.razorpay_payment_id,
+              razorpaySignature: res.razorpay_signature,
               bookingId,
             }).unwrap();
-            resolve({
-              paymentResponse,
-              verifyResponse,
-            });
-          } catch (error) {
-            reject(error);
-          }
+            resolve({ paymentResponse: res, verifyResponse: verifyRes });
+          } catch (e) { reject(e); }
         },
-        modal: {
-          ondismiss: () => reject(new Error('Payment cancelled by user.')),
-        },
+        modal: { ondismiss: () => reject(new Error('Payment cancelled.')) },
       });
-
       razorpay.open();
     });
 
@@ -629,6 +455,8 @@ function ReviewPay() {
       genderPreference: mapGenderPreference(draft.genderPreference),
       stops: (draft.stops || []).map((stop) => ({
         name: stop.name,
+        location: stop.location,
+        duration: stop.duration || stop.estimatedDuration,
         type: stop.category || stop.type || 'Custom',
       })),
       pricing: estimate ? {
@@ -636,27 +464,17 @@ function ReviewPay() {
         distanceCost: estimate.distanceCharge,
         timeCharge: estimate.timeCharge,
         guideServiceFee: estimate.guideFee,
-        estimatedRange: {
-          min: estimate.estimatedMin,
-          max: estimate.estimatedMax,
-        },
+        estimatedRange: { min: estimate.estimatedMin, max: estimate.estimatedMax },
         advanceAmount: estimate.advanceAmount,
       } : undefined,
     };
 
     try {
       setPaymentModalOpen(true);
-
       if (payMethod === 'wallet' && walletBalance < advanceAmount) {
-        dispatch(pushToast({
-          type:'error',
-          title:'Insufficient wallet balance',
-          message:'Please add money to your wallet or choose another payment method.'
-        }));
-        setPaymentModalOpen(false);
-        return;
+        dispatch(pushToast({ type:'error', title:'Insufficient balance' }));
+        setPaymentModalOpen(false); return;
       }
-
       setPaymentStage('creating_booking');
       const response = await createBooking(payload).unwrap();
       const createdBooking = response?.data || response?.booking || response;
@@ -665,74 +483,31 @@ function ReviewPay() {
 
       if (payMethod === 'wallet') {
         setPaymentStage('paying_with_wallet');
-        await payWithWallet({
-          user_id: user?._id || user?.id || user?.userId,
-          booking_id: bookingId,
-          amount: String(advanceAmount),
-        }).unwrap();
-
+        await payWithWallet({ user_id: user?._id || user?.id, booking_id: bookingId, amount: String(advanceAmount) }).unwrap();
         dispatch(debitWallet(advanceAmount));
       } else {
-        const scriptLoaded = await loadRazorpayScript();
-        if (!scriptLoaded) {
-          throw new Error('Could not load Razorpay checkout.');
-        }
-
+        await loadRazorpayScript();
         setPaymentStage('preparing_order');
-        const orderPayload = await createOrder({
-          bookingId,
-        }).unwrap();
-
+        const orderPayload = await createOrder({ bookingId }).unwrap();
         setPaymentStage('awaiting_payment');
-        const razorpayResult = await openRazorpayCheckout({
-          orderPayload,
-          bookingId,
-        });
-
-        const verifiedBooking =
-          razorpayResult?.verifyResponse?.data?.booking ||
-          razorpayResult?.verifyResponse?.data?.data?.booking ||
-          razorpayResult?.verifyResponse?.booking ||
-          razorpayResult?.verifyResponse?.data;
-
-        if (verifiedBooking && (verifiedBooking._id || verifiedBooking.id)) {
-          finalBooking = {
-            ...createdBooking,
-            ...verifiedBooking,
-          };
-        }
+        const razorpayResult = await openRazorpayCheckout({ orderPayload, bookingId });
+        const verifiedBooking = razorpayResult?.verifyResponse?.data?.booking || razorpayResult?.verifyResponse?.data || razorpayResult?.verifyResponse;
+        if (verifiedBooking?._id) finalBooking = { ...createdBooking, ...verifiedBooking };
       }
 
       dispatch(bookingCreated(finalBooking));
-      dispatch(pushToast({
-        type:'success',
-        title:'Booking confirmed! 🎉',
-        message: response?.message || 'Your booking has been created successfully.'
-      }));
+      dispatch(pushToast({ type:'success', title:'Confirmed! 🎉' }));
       setPaymentModalOpen(false);
-      setPaymentStage('idle');
       navigate('/bookings');
     } catch (error) {
       setPaymentModalOpen(false);
       setPaymentStage('idle');
-      dispatch(pushToast({
-        type:'error',
-        title:'Booking failed',
-        message: error?.data?.message || error?.message || 'Could not create booking. Please try again.'
-      }));
+      dispatch(pushToast({ type:'error', title:'Booking failed', message: error?.data?.message || error?.message }));
     }
   }
 
-  const rows = estimate ? [
-    ['Base fare',            estimate.baseFare],
-    ['Distance (est.)',      estimate.distanceCharge],
-    ['Time charge',          estimate.timeCharge],
-    ['Guide service fee',    estimate.guideFee],
-  ] : [];
-
   return (
     <div className="space-y-4 animate-fade-up">
-      {/* Trip summary */}
       <Card className="!p-0 overflow-hidden">
         <div className="px-5 py-3.5 border-b border-[var(--border)] flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />
@@ -746,7 +521,6 @@ function ReviewPay() {
         </div>
       </Card>
 
-      {/* Stops */}
       {draft.stops?.length > 0 && (
         <Card className="!p-4">
           <p className="text-xs font-semibold uppercase tracking-widest text-ink-500 mb-3">{draft.stops.length} stops planned</p>
@@ -761,7 +535,6 @@ function ReviewPay() {
         </Card>
       )}
 
-      {/* Price breakdown */}
       {estimate && (
         <Card className="!p-0 overflow-hidden">
           <div className="px-5 py-3.5 border-b border-[var(--border)] flex items-center gap-2">
@@ -769,32 +542,25 @@ function ReviewPay() {
             <span className="text-xs font-semibold uppercase tracking-widest text-ink-500">Price Breakdown</span>
           </div>
           <div className="p-5 space-y-2.5">
-            {rows.map(([l,v]) => (
+            {[ ['Base fare',estimate.baseFare],['Distance (est.)',estimate.distanceCharge],['Time charge',estimate.timeCharge],['Guide service fee',estimate.guideFee] ].map(([l,v]) => (
               <div key={l} className="flex justify-between text-sm">
                 <span className="text-ink-500">{l}</span>
                 <span className="font-mono text-ink-800 dark:text-ink-200">{formatINR(v)}</span>
               </div>
             ))}
-            <div className="flex justify-between text-xs text-ink-400 pt-1">
-              <span>Demand multiplier</span><span>×{estimate.demandMult}</span>
-            </div>
+            <div className="flex justify-between text-xs text-ink-400 pt-1"><span>Demand multiplier</span><span>×{estimate.demandMult}</span></div>
             <div className="h-px bg-[var(--border)] my-2" />
             <div className="flex justify-between font-semibold text-ink-900 dark:text-ink-100">
-              <span>Estimated range</span>
-              <span className="font-mono">{formatINR(estimate.estimatedMin)}–{formatINR(estimate.estimatedMax)}</span>
+              <span>Estimated range</span><span className="font-mono">{formatINR(estimate.estimatedMin)}–{formatINR(estimate.estimatedMax)}</span>
             </div>
             <div className="p-4 rounded-2xl bg-brand-50 dark:bg-brand-900/15 border border-brand-200 dark:border-brand-800/40 flex items-center justify-between mt-2">
-              <div>
-                <p className="text-brand-700 dark:text-brand-400 font-bold text-sm">Due now — 30% advance</p>
-                <p className="text-brand-600/70 dark:text-brand-500/70 text-xs mt-0.5">Remaining paid after ride completes</p>
-              </div>
+              <div><p className="text-brand-700 dark:text-brand-400 font-bold text-sm">Due now — 30% advance</p></div>
               <p className="font-display text-2xl font-bold text-gradient">{formatINR(estimate.advanceAmount)}</p>
             </div>
           </div>
         </Card>
       )}
 
-      {/* Payment method */}
       <Card className="!p-4">
         <p className="text-xs font-semibold uppercase tracking-widest text-ink-500 mb-3">Payment method</p>
         <div className="space-y-2">
@@ -804,77 +570,13 @@ function ReviewPay() {
               <span className="text-xl">{m.icon}</span>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-ink-900 dark:text-ink-100">{m.label}</p>
-                <p className="text-xs text-ink-400 mt-0.5">
-                  {m.id === 'wallet' ? `Balance: ${formatINR(walletBalance)}` : m.sub}
-                </p>
+                <p className="text-xs text-ink-400 mt-0.5">{m.id === 'wallet' ? `Balance: ${formatINR(walletBalance)}` : m.sub}</p>
               </div>
               {payMethod === m.id && <Check className="w-4 h-4 text-brand-500" />}
             </label>
           ))}
         </div>
-
-        <div className="mt-4 rounded-2xl border border-[var(--border)] bg-surface-2/70 dark:bg-surface-3/50 p-4">
-          <div className="flex items-start gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/40 flex items-center justify-center text-brand-600 dark:text-brand-400 flex-shrink-0">
-              <paymentMeta.Icon className="w-5 h-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-semibold text-ink-900 dark:text-ink-100">{paymentMeta.title}</p>
-                {payMethod !== 'wallet' && <Badge variant="brand" size="xs">Razorpay</Badge>}
-                {payMethod === 'wallet' && canUseWallet && <Badge variant="green" size="xs">Ready</Badge>}
-                {payMethod === 'wallet' && !canUseWallet && <Badge variant="amber" size="xs">Low balance</Badge>}
-              </div>
-              <p className="mt-1 text-xs leading-5 text-ink-500 dark:text-ink-400">{paymentMeta.helper}</p>
-            </div>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
-              <p className="text-ink-400">Advance due</p>
-              <p className="mt-1 font-mono font-bold text-ink-900 dark:text-ink-100">{formatINR(advanceAmount)}</p>
-            </div>
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
-              <p className="text-ink-400">{payMethod === 'wallet' ? 'Wallet balance' : 'Payment gateway'}</p>
-              <p className="mt-1 font-semibold text-ink-900 dark:text-ink-100">
-                {payMethod === 'wallet' ? formatINR(walletBalance) : 'Razorpay Secure'}
-              </p>
-            </div>
-          </div>
-          {payMethod === 'wallet' && !canUseWallet && (
-            <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
-              Your wallet needs {formatINR(Math.max(advanceAmount - walletBalance, 0))} more to continue with wallet payment.
-            </p>
-          )}
-          {payMethod === 'upi' && upiApp && (
-            <p className="mt-3 text-xs text-brand-600 dark:text-brand-400">
-              Selected UPI app: {UPI_APPS.find((app) => app.id === upiApp)?.name || 'UPI'}
-            </p>
-          )}
-        </div>
-
-        {payMethod === 'upi' && (
-          <div className="mt-3 pt-3 border-t border-[var(--border)]">
-            <p className="text-xs text-ink-400 mb-2 font-medium">Select UPI app</p>
-            <div className="grid grid-cols-3 gap-2">
-              {UPI_APPS.map(app => (
-                <button key={app.id} onClick={() => setUpiApp(app.id)}
-                  className={`p-2.5 rounded-xl border text-xs font-semibold transition-all ${upiApp === app.id ? 'border-brand-400 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400' : 'border-[var(--border)] text-ink-600 dark:text-ink-400 hover:border-[var(--border-strong)]'}`}>
-                  {app.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="mt-3 flex items-center gap-1.5 text-xs text-ink-400">
-          <Shield className="w-3.5 h-3.5 text-green-500" />
-          Secured by Razorpay · 256-bit SSL encrypted
-        </div>
       </Card>
-
-      <p className="text-xs text-ink-400 text-center leading-relaxed px-4">
-        By confirming, you agree to our Terms of Service. Your guide will be notified and must accept within 2 hours. Full refund if declined.
-      </p>
 
       <div className="flex justify-between gap-3 pt-1">
         <Button variant="ghost" onClick={() => dispatch(setStep(2))} icon={<ChevronLeft className="w-4 h-4" />}>Back</Button>
@@ -885,78 +587,22 @@ function ReviewPay() {
         </Button>
       </div>
 
-      <Modal open={paymentModalOpen} onClose={() => {}} title="Payment in Progress" className="p-5" size="md">
-        <div className="space-y-4">
-          <div className="flex items-start gap-3 rounded-2xl border border-brand-200 dark:border-brand-800/40 bg-brand-50/70 dark:bg-brand-900/15 p-4">
-            <div className="w-11 h-11 rounded-2xl bg-brand-500 text-ink-900 flex items-center justify-center flex-shrink-0">
-              <paymentMeta.Icon className="w-5 h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-ink-900 dark:text-ink-100">{paymentMeta.title}</p>
-              <p className="mt-1 text-xs text-ink-500 dark:text-ink-400">
-                {paymentStage === 'awaiting_payment'
-                  ? 'Complete the payment in the Razorpay popup. Do not close this page.'
-                  : 'We are processing your booking and payment securely.'}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {[
-              ['creating_booking', 'Booking request created'],
-              [payMethod === 'wallet' ? 'paying_with_wallet' : 'preparing_order', payMethod === 'wallet' ? 'Wallet debit started' : 'Razorpay order created'],
-              [payMethod === 'wallet' ? 'idle' : 'awaiting_payment', payMethod === 'wallet' ? 'Wallet payment complete' : 'Waiting for checkout completion'],
-              [payMethod === 'wallet' ? 'idle' : 'verifying_payment', payMethod === 'wallet' ? 'Verification complete' : 'Payment verification'],
-            ].map(([stageKey, label]) => {
-              const active =
-                paymentStage === stageKey ||
-                (stageKey === 'idle' && paymentStage === 'idle' && !isBusy);
-              const completedStages = ['creating_booking', 'paying_with_wallet', 'preparing_order', 'awaiting_payment', 'verifying_payment'];
-              const currentIndex = completedStages.indexOf(paymentStage);
-              const stageIndex = completedStages.indexOf(stageKey);
-              const completed = stageIndex !== -1 && currentIndex > stageIndex;
-
-              return (
-                <div key={label} className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full border flex items-center justify-center flex-shrink-0 ${
-                    completed
-                      ? 'bg-green-50 border-green-500 text-green-600 dark:bg-green-900/20 dark:text-green-400'
-                      : active
-                        ? 'bg-brand-50 border-brand-500 text-brand-600 dark:bg-brand-900/20 dark:text-brand-400'
-                        : 'bg-[var(--surface)] border-[var(--border)] text-ink-400'
-                  }`}>
-                    {active ? <Loader2 className="w-4 h-4 animate-spin" /> : completed ? <Check className="w-4 h-4" /> : <span className="text-xs font-bold">•</span>}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-ink-900 dark:text-ink-100">{label}</p>
-                    {active && <p className="text-xs text-ink-500 dark:text-ink-400">{paymentStageLabel}</p>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="rounded-2xl border border-[var(--border)] bg-surface-2/70 dark:bg-surface-3/50 p-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-ink-500">Advance payable now</span>
-              <span className="font-mono font-bold text-ink-900 dark:text-ink-100">{formatINR(advanceAmount)}</span>
-            </div>
-          </div>
+      <Modal open={paymentModalOpen} onClose={() => {}} title="Processing Payment" className="p-5" size="md">
+        <div className="text-center py-6">
+          <Loader2 className="w-12 h-12 text-brand-500 animate-spin mx-auto mb-4" />
+          <p className="text-lg font-bold text-ink-900 dark:text-ink-100">{paymentStageLabel}</p>
+          <p className="text-sm text-ink-500 mt-2">Please do not close this window or refresh the page.</p>
         </div>
       </Modal>
     </div>
   );
 }
 
-// ── Main Booking Page ──────────────────────────────────
 export default function BookingPage() {
   const dispatch = useAppDispatch();
   const step     = useStep();
-
   useEffect(() => { dispatch(resetWizard()); }, [dispatch]);
-
   const stepContent = [<TripDetails />, <AddStops />, <ReviewPay />];
-
   return (
     <PageWrapper>
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
