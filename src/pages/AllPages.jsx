@@ -555,14 +555,18 @@ export function TrackingPage() {
     );
   }
 
+  const isOngoing = booking.status === 'ongoing' || booking.bookingStatus === 'ongoing';
+
   return (
     <PageWrapper>
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
         <div className="mb-6">
           <div className="text-xs tracking-[0.3em] text-brand-500 uppercase font-semibold mb-2">Live tracking</div>
-          <h1 className="font-display text-3xl font-bold text-ink-900 dark:text-ink-100">Your guide is on the way</h1>
+          <h1 className="font-display text-3xl font-bold text-ink-900 dark:text-ink-100">
+            {isOngoing ? 'Tour in progress' : 'Your guide is on the way'}
+          </h1>
         </div>
-        <LiveTracker booking={booking} height="380px" />
+        <LiveTracker booking={booking} height="450px" />
       </div>
     </PageWrapper>
   );
