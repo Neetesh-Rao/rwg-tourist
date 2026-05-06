@@ -164,7 +164,7 @@ function TripDetails() {
     if (!form.city || !form.date || !form.pickupAddress) return;
     dispatch(updateDraft(form));
     dispatch(fetchSlots({ city: form.city, date: form.date, startTime: form.startTime, endTime: form.endTime, genderPreference: form.genderPreference }));
-    dispatch(estimatePrice({ cityId: form.city, rideTypeId: form.rideType, hoursBOOKED: selRT?.hours || 5 }));
+    dispatch(estimatePrice({ cityId: form.city, rideTypeId: form.rideType,  hoursBooked: selRT?.hours || 5}));
     dispatch(setStep(2));
   }
 
