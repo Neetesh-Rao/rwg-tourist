@@ -10,7 +10,10 @@ import RegisterPage from '@/pages/Auth/Register/RegisterPage';
 import LoginPage from '@/pages/Auth/Login/LoginPage';
 import DashboardPage from '@/pages/Dashboard/DashboardPage';
 import BookingPage from '@/pages/Booking/BookingPage';
-import { BookingsPage, TrackingPage, ProfilePage, WalletPage } from '@/pages/AllPages';
+import BookingsPage from '@/pages/Booking/BookingsPage';
+import TrackingPage from '@/pages/Tracking/TrackingPage';
+import ProfilePage from '@/pages/Profile/ProfilePage';
+import WalletPage from '@/pages/Wallet/WalletPage';
 
 import SocketManager from "../socket/SocketManager";
 
