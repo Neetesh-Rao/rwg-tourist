@@ -57,7 +57,7 @@ export default function DashboardPage() {
   const user = useUser();
   const bookings = useBookings();
 
-  useEffect(() => { dispatch(loadMyBookings()); }, [dispatch]);
+  // useEffect(() => { dispatch(loadMyBookings()); }, [dispatch]);
 
   const upcoming = bookings.filter(b => ['confirmed', 'assigned', 'pending', 'searching'].includes(b.status));
   const completed = bookings.filter(b => b.status === 'completed');
