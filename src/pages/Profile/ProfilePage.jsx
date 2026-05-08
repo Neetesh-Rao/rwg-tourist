@@ -3,7 +3,7 @@ import { Camera } from 'lucide-react';
 import { useAppDispatch, useUser, useAuth } from '@/app/store/store';
 import { setAuthSession } from '@/app/store/slices/authSlice';
 import { useGetProfileQuery, useUpdateProfileMutation } from '@/app/store/slices/authApi';
-import { pushToast } from '@/app/store/slices/uiWalletSlice';
+import { pushToast } from '@/app/store/slices/uiSlice';
 import PageWrapper from '@/shared/layout/PageWrapper/PageWrapper';
 import Button from '@/shared/ui/Button/Button';
 import Card from '@/shared/ui/Card/Card';
