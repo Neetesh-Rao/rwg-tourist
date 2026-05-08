@@ -5,7 +5,7 @@ import { store, useAuth } from '@/app/store/store';
 import 'leaflet/dist/leaflet.css';
 import { Toaster } from 'react-hot-toast';
 import { useGetPlatformConfigQuery } from '@/app/store/slices/configApi';
-import { initPlatformConfig } from '@/shared/config/constants';
+import { updatePlatformConstants } from '@/shared/config/constants';
 
 import HomePage from '@/pages/Home/HomePage';
 import RegisterPage from '@/pages/Auth/Register/RegisterPage';
@@ -43,7 +43,7 @@ function ConfigLoader({ children }) {
   React.useEffect(() => {
     if (data) {
       // Update the let variables in constants.js
-      initPlatformConfig();
+      updatePlatformConstants(data);
     }
   }, [data]);
 
