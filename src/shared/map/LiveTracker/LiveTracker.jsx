@@ -71,6 +71,11 @@ export default function LiveTracker({ booking, height = '400px' }) {
       });
     }
 
+
+
+
+  
+
     // Draw dashed route line
     if (pathPoints.length > 1) {
       L.polyline(pathPoints, {

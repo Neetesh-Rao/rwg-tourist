@@ -25,7 +25,7 @@ import StarRating from '@/shared/ui/StarRating/StarRating';
 import { Skeleton } from '@/shared/ui/Loader/Loader';
 import MapPicker from '@/shared/map/MapPicker/MapPicker';
 import { CITIES, RIDE_TYPES, CITY_STOPS, LANGUAGES, PAYMENT_METHODS, UPI_APPS } from '@/shared/config/constants';
-import { formatINR, getTomorrow } from '@/shared/lib/helpers';
+import { formatINR, getTomorrow, calculateRouteDistance } from '@/shared/lib/helpers';
 
 const STEPS = ['Trip Details', 'Your Stops', 'Review & Pay'];
 
@@ -120,16 +120,14 @@ function StepBar({ current }) {
       {STEPS.map((label, i) => (
         <React.Fragment key={label}>
           <div className="flex flex-col items-center flex-shrink-0">
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-400 ${
-              i + 1 < current  ? 'bg-brand-500 text-white'
-              : i + 1 === current ? 'bg-brand-500 text-white ring-4 ring-brand-100 dark:ring-brand-900/40'
-              : 'bg-surface-2 dark:bg-surface-3 text-ink-400 border border-[var(--border)]'
-            }`}>
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-400 ${i + 1 < current ? 'bg-brand-500 text-white'
+                : i + 1 === current ? 'bg-brand-500 text-white ring-4 ring-brand-100 dark:ring-brand-900/40'
+                  : 'bg-surface-2 dark:bg-surface-3 text-ink-400 border border-[var(--border)]'
+              }`}>
               {i + 1 < current ? <Check className="w-4 h-4" /> : i + 1}
             </div>
-            <span className={`mt-1.5 text-[10px] tracking-wide uppercase font-semibold hidden sm:block ${
-              i + 1 === current ? 'text-brand-600 dark:text-brand-400' : 'text-ink-400'
-            }`}>{label}</span>
+            <span className={`mt-1.5 text-[10px] tracking-wide uppercase font-semibold hidden sm:block ${i + 1 === current ? 'text-brand-600 dark:text-brand-400' : 'text-ink-400'
+              }`}>{label}</span>
           </div>
           {i < STEPS.length - 1 && (
             <div className={`flex-1 h-px mx-2 transition-all duration-500 ${i + 1 < current ? 'bg-brand-500' : 'bg-[var(--border)]'}`} />
@@ -145,16 +143,16 @@ function TripDetails() {
   const draft = useDraft();
   const [showMap, setShowMap] = useState(false);
   const [form, setForm] = useState({
-    city:              draft.city              || '',
-    date:              draft.date              || '',
-    startTime:         draft.startTime         || '09:00',
-    endTime:           draft.endTime           || '17:00',
-    rideType:          draft.rideType          || '5hr',
-    genderPreference:  draft.genderPreference  || 'female_first',
+    city: draft.city || '',
+    date: draft.date || '',
+    startTime: draft.startTime || '09:00',
+    endTime: draft.endTime || '17:00',
+    rideType: draft.rideType || '5hr',
+    genderPreference: draft.genderPreference || 'female_first',
     preferredLanguage: draft.preferredLanguage || 'English',
-    pickupAddress:     draft.pickupAddress     || '',
-    pickupLat:         draft.pickupLat         || null,
-    pickupLng:         draft.pickupLng         || null,
+    pickupAddress: draft.pickupAddress || '',
+    pickupLat: draft.pickupLat || null,
+    pickupLng: draft.pickupLng || null,
   });
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -164,7 +162,7 @@ function TripDetails() {
     if (!form.city || !form.date || !form.pickupAddress) return;
     dispatch(updateDraft(form));
     dispatch(fetchSlots({ city: form.city, date: form.date, startTime: form.startTime, endTime: form.endTime, genderPreference: form.genderPreference }));
-    dispatch(estimatePrice({ cityId: form.city, rideTypeId: form.rideType,  hoursBooked: selRT?.hours || 5}));
+    dispatch(estimatePrice({ cityId: form.city, rideTypeId: form.rideType,  hoursBooked: selRT?.hours}));
     dispatch(setStep(2));
   }
 
@@ -200,7 +198,7 @@ function TripDetails() {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <Input label="Start time" type="time" leftIcon={<Clock className="w-4 h-4" />} value={form.startTime} onChange={e => set('startTime', e.target.value)} />
-        <Input label="End time"   type="time" leftIcon={<Clock className="w-4 h-4" />} value={form.endTime}   onChange={e => set('endTime',   e.target.value)} />
+        <Input label="End time" type="time" leftIcon={<Clock className="w-4 h-4" />} value={form.endTime} onChange={e => set('endTime', e.target.value)} />
       </div>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -227,10 +225,10 @@ function TripDetails() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Select label="Guide gender preference"
-          options={[{ value:'female_first',label:'Female guide preferred' },{ value:'male_first',label:'Male guide preferred' },{ value:'any',label:'No preference' }]}
+          options={[{ value: 'female_first', label: 'Female guide preferred' }, { value: 'male_first', label: 'Male guide preferred' }, { value: 'any', label: 'No preference' }]}
           value={form.genderPreference} onChange={e => set('genderPreference', e.target.value)} />
         <Select label="Language"
-          options={LANGUAGES.map(l => ({ value:l, label:l }))}
+          options={LANGUAGES.map(l => ({ value: l, label: l }))}
           value={form.preferredLanguage} onChange={e => set('preferredLanguage', e.target.value)} />
       </div>
       <div className="flex justify-end pt-2">
@@ -244,12 +242,12 @@ function TripDetails() {
 
 function AddStops() {
   const dispatch = useAppDispatch();
-  const draft    = useDraft();
+  const draft = useDraft();
   const [custom, setCustom] = useState('');
 
   const cityStops = CITY_STOPS[draft.city] || [];
-  const current   = draft.stops || [];
-  const cats      = [...new Set(cityStops.map(s => s.category))];
+  const current = draft.stops || [];
+  const cats = [...new Set(cityStops.map(s => s.category))];
   const suggestedStops = cityStops.filter(
     (stop) =>
       stop.name.toLowerCase().includes(custom.trim().toLowerCase()) &&
@@ -263,15 +261,15 @@ function AddStops() {
       const found = current.find(s => s.name === stop.name);
       if (found) dispatch(removeStop(found.id));
     } else {
-      dispatch(addStop({ 
-        id: Date.now().toString(), 
-        name: stop.name, 
+      dispatch(addStop({
+        id: Date.now().toString(),
+        name: stop.name,
         location: {
-          address: `${stop.name}, ${draft.city}`, 
-          lat: stop.lat, 
-          lng: stop.lng 
+          address: `${stop.name}, ${draft.city}`,
+          lat: stop.lat,
+          lng: stop.lng
         },
-        duration: stop.duration 
+        duration: stop.duration
       }));
     }
   }
@@ -354,7 +352,7 @@ function AddStops() {
           <p className="text-xs text-ink-400 uppercase tracking-wider font-semibold">Your itinerary — {current.length} stop{current.length !== 1 ? 's' : ''}</p>
           {current.map((stop, i) => (
             <div key={stop.id} className="flex items-center gap-3 p-3 card !rounded-xl">
-              <div className="w-6 h-6 rounded-full bg-brand-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{i+1}</div>
+              <div className="w-6 h-6 rounded-full bg-brand-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{i + 1}</div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-ink-900 dark:text-ink-100">{stop.name}</p>
                 <p className="text-xs text-ink-400">~{stop.duration || stop.estimatedDuration} min</p>
@@ -373,24 +371,50 @@ function AddStops() {
 
       <div className="flex justify-between pt-2">
         <Button variant="ghost" onClick={() => dispatch(setStep(1))} icon={<ChevronLeft className="w-4 h-4" />}>Back</Button>
-        <Button variant="primary" size="lg" onClick={() => dispatch(setStep(3))} iconRight={<ChevronRight className="w-4 h-4" />}>Review booking</Button>
+        <Button 
+          variant="primary" 
+          size="lg" 
+          onClick={() => {
+            const pickup = { lat: draft.pickupLat, lng: draft.pickupLng };
+            const { total, segments } = calculateRouteDistance(pickup, current);
+            const selRT = RIDE_TYPES.find(r => r.id === draft.rideType);
+            
+            console.log('--- DISTANCE DEBUG ---');
+            console.log('Pickup:', pickup);
+            console.log('Stops:', current.length);
+            console.log('Calculated KM:', total);
+            console.log('Segments:', segments);
+
+            dispatch(estimatePrice({ 
+              cityId: draft.city, 
+              rideTypeId: draft.rideType, 
+              hoursBooked: selRT?.hours || 5,
+              actualKm: total,
+              segments: segments
+            }));
+            dispatch(setStep(3));
+          }} 
+          iconRight={<ChevronRight className="w-4 h-4" />}
+        >
+          Review booking
+        </Button>
       </div>
     </div>
   );
 }
 
 function ReviewPay() {
-  const dispatch  = useAppDispatch();
-  const navigate  = useNavigate();
-  const draft     = useDraft();
-  const estimate  = useEstimate();
-  const user      = useUser();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const draft = useDraft();
+  const estimate = useEstimate();
+  const user = useUser();
   const [createBooking, { isLoading }] = useCreateBookingMutation();
   const [payWithWallet, { isLoading: isPayingWithWallet }] = usePayWithWalletMutation();
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
   const [verifyPayment, { isLoading: isVerifyingPayment }] = useVerifyPaymentMutation();
   const [payMethod, setPayMethod] = useState('upi');
-  const [upiApp,    setUpiApp]    = useState('');
+  const [upiApp, setUpiApp] = useState('');
   const [paymentStage, setPaymentStage] = useState('idle');
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
@@ -464,7 +488,12 @@ function ReviewPay() {
         distanceCost: estimate.distanceCharge,
         timeCharge: estimate.timeCharge,
         guideServiceFee: estimate.guideFee,
-        estimatedRange: { min: estimate.estimatedMin, max: estimate.estimatedMax },
+        serviceFee: estimate.serviceFee,
+        rideFee: estimate.rideFee,
+        totalAmount: estimate.totalFee,
+        totalDistance: estimate.totalDistance,
+        distanceSegments: estimate.distanceSegments,
+        demandMultiplier: estimate.demandMult,
         advanceAmount: estimate.advanceAmount,
       } : undefined,
     };
@@ -472,7 +501,7 @@ function ReviewPay() {
     try {
       setPaymentModalOpen(true);
       if (payMethod === 'wallet' && walletBalance < advanceAmount) {
-        dispatch(pushToast({ type:'error', title:'Insufficient balance' }));
+        dispatch(pushToast({ type: 'error', title: 'Insufficient balance' }));
         setPaymentModalOpen(false); return;
       }
       setPaymentStage('creating_booking');
@@ -496,13 +525,13 @@ function ReviewPay() {
       }
 
       dispatch(bookingCreated(finalBooking));
-      dispatch(pushToast({ type:'success', title:'Confirmed! 🎉' }));
+      dispatch(pushToast({ type: 'success', title: 'Confirmed! 🎉' }));
       setPaymentModalOpen(false);
       navigate('/bookings');
     } catch (error) {
       setPaymentModalOpen(false);
       setPaymentStage('idle');
-      dispatch(pushToast({ type:'error', title:'Booking failed', message: error?.data?.message || error?.message }));
+      dispatch(pushToast({ type: 'error', title: 'Booking failed', message: error?.data?.message || error?.message }));
     }
   }
 
@@ -514,7 +543,7 @@ function ReviewPay() {
           <span className="text-xs font-semibold uppercase tracking-widest text-ink-500">Trip Summary</span>
         </div>
         <div className="p-5 grid grid-cols-2 gap-4">
-          {[['City',draft.city],['Date',draft.date],['Time',`${draft.startTime} – ${draft.endTime}`],['Tour',selRT?.label||'—']].map(([k,v]) => (
+          {[['City', draft.city], ['Date', draft.date], ['Time', `${draft.startTime} – ${draft.endTime}`], ['Tour', selRT?.label || '—']].map(([k, v]) => (
             <div key={k}><p className="text-xs text-ink-400 mb-0.5">{k}</p><p className="text-sm font-semibold text-ink-900 dark:text-ink-100 capitalize">{v}</p></div>
           ))}
           <div className="col-span-2"><p className="text-xs text-ink-400 mb-0.5">Pickup</p><p className="text-sm font-semibold text-ink-900 dark:text-ink-100">{draft.pickupAddress}</p></div>
@@ -527,7 +556,7 @@ function ReviewPay() {
           <div className="flex flex-wrap gap-2">
             {draft.stops.map((s, i) => (
               <span key={s.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-2 dark:bg-surface-3 border border-[var(--border)] text-xs text-ink-700 dark:text-ink-300">
-                <span className="w-4 h-4 rounded-full bg-brand-500 text-white text-[10px] flex items-center justify-center font-bold">{i+1}</span>
+                <span className="w-4 h-4 rounded-full bg-brand-500 text-white text-[10px] flex items-center justify-center font-bold">{i + 1}</span>
                 {s.name}
               </span>
             ))}
@@ -541,17 +570,33 @@ function ReviewPay() {
             <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />
             <span className="text-xs font-semibold uppercase tracking-widest text-ink-500">Price Breakdown</span>
           </div>
-          <div className="p-5 space-y-2.5">
-            {[ ['Base fare',estimate.baseFare],['Distance (est.)',estimate.distanceCharge],['Time charge',estimate.timeCharge],['Guide service fee',estimate.guideFee] ].map(([l,v]) => (
+          <div className="p-5 space-y-3">
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-ink-400 mb-2">Distance Breakdown</p>
+              {estimate.distanceSegments?.map((seg, i) => (
+                <div key={i} className="flex justify-between text-xs items-center py-1 border-b border-dashed border-[var(--border)] last:border-0">
+                  <span className="text-ink-500 truncate mr-4">{seg.from} → {seg.to}</span>
+                  <span className="font-mono font-bold text-ink-700 dark:text-ink-300 flex-shrink-0">{seg.distance} km</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="h-px bg-[var(--border)] my-2" />
+
+            {[ 
+              ['Total distance (est.)', `${estimate.totalDistance} km`],
+              ['Service fee', formatINR(estimate.serviceFee)], 
+              ['Ride fee', formatINR(estimate.rideFee)] 
+            ].map(([l, v]) => (
               <div key={l} className="flex justify-between text-sm">
                 <span className="text-ink-500">{l}</span>
-                <span className="font-mono text-ink-800 dark:text-ink-200">{formatINR(v)}</span>
+                <span className="font-mono text-ink-900 dark:text-ink-100 font-bold">{v}</span>
               </div>
             ))}
-            <div className="flex justify-between text-xs text-ink-400 pt-1"><span>Demand multiplier</span><span>×{estimate.demandMult}</span></div>
             <div className="h-px bg-[var(--border)] my-2" />
-            <div className="flex justify-between font-semibold text-ink-900 dark:text-ink-100">
-              <span>Estimated range</span><span className="font-mono">{formatINR(estimate.estimatedMin)}–{formatINR(estimate.estimatedMax)}</span>
+            <div className="flex justify-between font-bold text-lg text-ink-900 dark:text-ink-100">
+              <span>Total amount</span>
+              <span className="font-mono text-brand-600 dark:text-brand-400">{formatINR(estimate.totalFee)}</span>
             </div>
             <div className="p-4 rounded-2xl bg-brand-50 dark:bg-brand-900/15 border border-brand-200 dark:border-brand-800/40 flex items-center justify-between mt-2">
               <div><p className="text-brand-700 dark:text-brand-400 font-bold text-sm">Due now — 30% advance</p></div>
@@ -587,7 +632,7 @@ function ReviewPay() {
         </Button>
       </div>
 
-      <Modal open={paymentModalOpen} onClose={() => {}} title="Processing Payment" className="p-5" size="md">
+      <Modal open={paymentModalOpen} onClose={() => { }} title="Processing Payment" className="p-5" size="md">
         <div className="text-center py-6">
           <Loader2 className="w-12 h-12 text-brand-500 animate-spin mx-auto mb-4" />
           <p className="text-lg font-bold text-ink-900 dark:text-ink-100">{paymentStageLabel}</p>
@@ -600,7 +645,7 @@ function ReviewPay() {
 
 export default function BookingPage() {
   const dispatch = useAppDispatch();
-  const step     = useStep();
+  const step = useStep();
   useEffect(() => { dispatch(resetWizard()); }, [dispatch]);
   const stepContent = [<TripDetails />, <AddStops />, <ReviewPay />];
   return (

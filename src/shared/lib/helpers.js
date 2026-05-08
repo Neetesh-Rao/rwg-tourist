@@ -1,3 +1,5 @@
+import { DISTANCE_DEFAULTS, PRICING_CONFIG, GLOBAL_RATES } from '../config/constants';
+
 export const genId=(p='id')=>`${p}_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
 export const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 export const genOTP=()=>String(Math.floor(1000+Math.random()*9000));
@@ -18,12 +20,118 @@ export const isValidPhone=v=>/^[6-9]\d{9}$/.test(v);
 export const isValidName=v=>v&&v.trim().length>=2;
 export const isValidPass=v=>v&&v.length>=8;
 
-export const calcEstimate=({city,rideTypeId,hoursBooked=5})=>{
+// Calculates distance between two points in KM
+export const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d;
+};
+
+// Calculates total route distance (Pickup -> Stop 1 -> Stop 2 ...) with breakdown
+export const calculateRouteDistance = (pickup, stops = [], config = null) => {
+  const roadFactor = config?.PRICING_CONFIG?.ROAD_FACTOR || PRICING_CONFIG.ROAD_FACTOR;
+  if (!stops || stops.length === 0) return { total: 0, segments: [] };
+  
+  let total = 0;
+  let segments = [];
+  let lastPoint = null;
+  let lastLabel = "Pickup";
+
+  // 1. Try to start from pickup
+  if (pickup?.lat && pickup?.lng) {
+    lastPoint = { lat: pickup.lat, lng: pickup.lng };
+    lastLabel = "Pickup";
+  } else {
+    // 2. If no pickup coords, start from the first stop
+    const firstStop = stops[0];
+    const fLat = firstStop.location?.lat || firstStop.lat;
+    const fLng = firstStop.location?.lng || firstStop.lng;
+    if (fLat && fLng) {
+      lastPoint = { lat: fLat, lng: fLng };
+      lastLabel = firstStop.name;
+    }
+  }
+
+  if (!lastPoint) return { total: 0, segments: [] };
+
+  stops.forEach((stop, index) => {
+    // If we started from the first stop, skip the first calculation
+    if (index === 0 && (!pickup?.lat || !pickup?.lng)) return;
+
+    const stopLat = stop.location?.lat || stop.lat;
+    const stopLng = stop.location?.lng || stop.lng;
+    
+    if (stopLat && stopLng) {
+      const dist = calculateDistance(lastPoint.lat, lastPoint.lng, stopLat, stopLng);
+      const roadDist = parseFloat((dist * roadFactor).toFixed(1)); // Use factor from config
+      
+      segments.push({
+        from: lastLabel,
+        to: stop.name,
+        distance: roadDist
+      });
+
+      total += roadDist;
+      lastPoint = { lat: stopLat, lng: stopLng };
+      lastLabel = stop.name;
+    }
+  });
+
+  return { 
+    total: parseFloat(total.toFixed(1)), 
+    segments,
+    roadFactorApplied: roadFactor
+  };
+};
+
+export const calcEstimate=({city, rideTypeId, hoursBooked=5, actualKm=0, segments=[], config=null})=>{
   if(!city)return null;
-  const km={  '2hr':15,'5hr':35,fullday:70,custom:25}[rideTypeId]||30;
-  const base=city.base,dist=Math.round(km*city.perKm),time=Math.round((hoursBooked||5)*city.perHour),guide=city.guideFee,d=city.demand;
-  const sub=Math.round((base+dist+time+guide)*d),v=Math.round(sub*.15);
-  return{baseFare:base,distanceCharge:dist,timeCharge:time,guideFee:guide,demandMult:d,subtotal:sub,estimatedMin:sub-v,estimatedMax:sub+v,advanceAmount:Math.round(sub*.3)};
+
+  const rates = config?.GLOBAL_RATES || GLOBAL_RATES;
+  const distDefaults = config?.DISTANCE_DEFAULTS || DISTANCE_DEFAULTS;
+  const pConfig = config?.PRICING_CONFIG || PRICING_CONFIG;
+
+  const estimatedKm = distDefaults[rideTypeId] || distDefaults.default || 30;
+  const km = actualKm > 0 ? actualKm : estimatedKm;
+  
+  const base = rates.base;
+  const dist = Math.round(km * rates.perKm);
+  const time = Math.round((hoursBooked || 5) * rates.perHour);
+  const guide = rates.guideFee;
+  const d = city.demand || 1.0;
+  
+  // Calculate specific categories
+  const rideFee = Math.round((dist + time) * d);
+  const serviceFee = Math.round((base + guide) * d);
+  const total = rideFee + serviceFee;
+
+  return {
+    baseFare: base,
+    distanceCharge: dist,
+    timeCharge: time,
+    guideFee: guide,
+    rideFee,
+    serviceFee,
+    totalFee: total,
+    totalDistance: km,
+    distanceSegments: segments,
+    demandMult: d,
+    advanceAmount: Math.round(total * pConfig.ADVANCE_PERCENT),
+    calculationMethod: {
+      formula: pConfig.FORMULA,
+      description: pConfig.DESCRIPTION,
+      roadFactor: pConfig.ROAD_FACTOR,
+      isRealRoute: actualKm > 0
+    }
+  };
 };
 
 export const createMockBooking=(draft,rider,estimate)=>{

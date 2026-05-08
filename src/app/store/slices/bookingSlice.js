@@ -1,13 +1,11 @@
 import{createSlice,createAsyncThunk}from'@reduxjs/toolkit';
 import{ls,sleep,calcEstimate,createMockBooking,genId}from'@/shared/lib/helpers';
-import{MOCK_RIDERS,getCityById}from'@/shared/config/constants';
+import { getCityById } from '@/shared/config/constants';
 
 export const fetchSlots=createAsyncThunk('booking/fetchSlots',async(params,{rejectWithValue})=>{
   try{
     await sleep(900);
-    let riders=[...MOCK_RIDERS];
-    if(params.genderPreference==='female_first') riders.sort((a,b)=>a.gender==='female'?-1:1);
-    else if(params.genderPreference==='male_first') riders.sort((a,b)=>a.gender==='male'?-1:1);
+    let riders = []; // Real riders will be fetched from API later
     return riders.map((rider,i)=>({id:genId('slot'),riderId:rider.id,rider,city:params.city,date:params.date,startTime:params.startTime||'08:00',endTime:params.endTime||'20:00',status:'available'}));
   }catch{return rejectWithValue('Could not load guides. Please try again.');}
 });
@@ -15,7 +13,7 @@ export const fetchSlots=createAsyncThunk('booking/fetchSlots',async(params,{reje
 export const estimatePrice=createAsyncThunk('booking/estimatePrice',async(params)=>{
   await sleep(200);
   const city=getCityById(params.cityId);
-  return calcEstimate({city,rideTypeId:params.rideTypeId,hoursBooked:params.hoursBooked});
+  return calcEstimate({city,rideTypeId:params.rideTypeId,hoursBooked:params.hoursBooked,actualKm:params.actualKm});
 });
 
 export const createBooking=createAsyncThunk('booking/create',async(_,{rejectWithValue,getState})=>{

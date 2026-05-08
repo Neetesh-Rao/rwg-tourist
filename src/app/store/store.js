@@ -4,6 +4,7 @@ import { api } from "./service";
 import authReducer from "./slices/authSlice";
 import bookingReducer from "./slices/bookingSlice";
 import { uiSlice, walletSlice } from "./slices/uiWalletSlice";
+import { configApi } from "./slices/configApi";
 
 export const store = configureStore({
   reducer: {
@@ -11,10 +12,11 @@ export const store = configureStore({
     booking: bookingReducer,
     ui: uiSlice.reducer,
     wallet: walletSlice.reducer,
-    [api.reducerPath]: api.reducer
+    [api.reducerPath]: api.reducer,
+    [configApi.reducerPath]: configApi.reducer
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(api.middleware)
+    getDefaultMiddleware().concat(api.middleware, configApi.middleware)
 });
 
 export const useAppDispatch = () => useDispatch();
@@ -31,3 +33,4 @@ export const useDraft = () => useAppSelector((state) => state.booking.draft);
 export const useEstimate = () => useAppSelector((state) => state.booking.priceEstimate);
 export const useSlots = () => useAppSelector((state) => state.booking.availableSlots);
 export const useStep = () => useAppSelector((state) => state.booking.step);
+export const useConfig = () => useAppSelector((state) => configApi.endpoints.getPlatformConfig.select()(state).data);
