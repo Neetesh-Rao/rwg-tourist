@@ -1,4 +1,4 @@
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9999/api';
+export const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9999/api';
 
 export let GLOBAL_RATES = null;
 export let CITIES = [];
