@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 import { useAppDispatch, useBookings } from '@/app/store/store';
 import { loadMyBookings, setBookings } from '@/app/store/slices/bookingSlice';
-import { pushToast } from '@/app/store/slices/uiWalletSlice';
-import { useGetBookingsQuery } from '@/app/store/slices/bookingApi';
+import { pushToast } from '@/app/store/slices/uiSlice';
+import { useGetBookingsQuery, useCancelBookingMutation } from '@/app/store/slices/bookingApi';
 import PageWrapper from '@/shared/layout/PageWrapper/PageWrapper';
 import Button from '@/shared/ui/Button/Button';
 import Card from '@/shared/ui/Card/Card';
@@ -28,7 +28,7 @@ import { BOOKING_STATUS } from '@/shared/config/constants';
 import { formatINR, formatDate } from '@/shared/lib/helpers';
 import { normalizeBooking } from '@/shared/lib/bookingHelpers';
 
-function BookingDetail({ booking, onTrack, onClick }) {
+function BookingDetail({ booking, onTrack, onClick, onCancel }) {
   const [showPricingDetails, setShowPricingDetails] = useState(false);
   const cfg = BOOKING_STATUS[booking.status] || BOOKING_STATUS.pending;
   const bvar = { brand: 'brand', green: 'green', red: 'red', amber: 'amber', neutral: 'neutral' }[cfg.color] || 'neutral';
@@ -97,7 +97,7 @@ function BookingDetail({ booking, onTrack, onClick }) {
               className="flex-1 !border-red-200 !text-red-500 hover:!bg-red-50 dark:!border-red-800/40 dark:!text-red-400 dark:hover:!bg-red-900/20 transition-colors" 
               variant="secondary" 
               size="sm" 
-              onClick={(e) => { e.stopPropagation(); /* Cancel logic placeholder */ }} 
+              onClick={(e) => { e.stopPropagation(); onCancel(booking.id); }} 
             >
               Cancel Ride
             </Button>
@@ -373,7 +373,18 @@ export default function BookingsPage() {
   });
   const [filter, setFilter] = useState('all');
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [cancelBooking] = useCancelBookingMutation();
   const [success, setSuccess] = useState(location.search.includes('success=true'));
+
+  const handleCancel = async (id) => {
+    if (!window.confirm('Are you sure you want to cancel this ride?')) return;
+    try {
+      await cancelBooking(id).unwrap();
+      dispatch(pushToast({ type: 'success', title: 'Booking Cancelled', message: 'Your ride has been successfully cancelled.' }));
+    } catch (err) {
+      dispatch(pushToast({ type: 'error', title: 'Cancellation Failed', message: err?.data?.message || 'Could not cancel booking.' }));
+    }
+  };
 
   useEffect(() => {
     const apiBookings = bookingsResponse?.data || bookingsResponse?.bookings || bookingsResponse;
@@ -456,7 +467,15 @@ export default function BookingsPage() {
           />
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
-            {filtered.map((b) => <BookingDetail key={b.id} booking={b} onTrack={(trackBooking) => navigate('/tracking', { state: { booking: trackBooking } })} onClick={()=>setSelectedBooking(b)} />)}
+            {filtered.map((b) => (
+              <BookingDetail 
+                key={b.id} 
+                booking={b} 
+                onTrack={(trackBooking) => navigate('/tracking', { state: { booking: trackBooking } })} 
+                onClick={() => setSelectedBooking(b)} 
+                onCancel={handleCancel}
+              />
+            ))}
           </div>
         )}
       </div>

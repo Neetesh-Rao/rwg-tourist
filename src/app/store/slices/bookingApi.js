@@ -16,20 +16,19 @@ export const bookingApi = api.injectEndpoints({
       providesTags: ["Booking"]
     }),
 
-    payFromWallet: builder.mutation({
-      query: (data) => ({
-        url: "/bookings/pay-from-wallet",
-        method: "POST",
-        body: data
+    cancelBooking: builder.mutation({
+      query: (id) => ({
+        url: `/tourist/booking/${id}`,
+        method: "PATCH",
+        body: { status: "cancelled" }
       }),
-      invalidatesTags: ["Wallet", "Booking", "Transaction"]
-    })
-
+      invalidatesTags: ["Booking"]
+    }),
   })
 });
 
 export const {
   useCreateBookingMutation,
   useGetBookingsQuery,
-  usePayFromWalletMutation
+  useCancelBookingMutation,
 } = bookingApi;

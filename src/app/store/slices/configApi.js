@@ -1,11 +1,10 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { api } from "../service";
 
-export const configApi = createApi({
-  reducerPath: 'configApi',
-  baseQuery: fetchBaseQuery({ baseUrl: import.meta.env.VITE_API_URL}),
+
+export const configApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getPlatformConfig: builder.query({
-      query: () => '/config',
+      query: () => "/config",
       transformResponse: (response) => response.data || response,
     }),
   }),

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { connectTouristSocket } from "./socket";
-import { pushToast } from "../app/store/slices/uiWalletSlice";
+import { pushToast } from "../app/store/slices/uiSlice";
 import { useAuth } from "../app/store/store";
 
 export default function SocketManager() {
