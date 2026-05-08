@@ -78,12 +78,26 @@ export default function SocketManager() {
     socket.on("notification", notificationHandler);
     socket.on("booking-cancelled", bookingCancelledHandler);
 
+    // AUDIO UNLOCKER
+    const unlockAudio = () => {
+      console.log("🔊 Tourist Audio unlocked");
+      const audio = new Audio('/Notification.mp3');
+      audio.volume = 0;
+      audio.play().catch(() => {});
+      window.removeEventListener('click', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
+    };
+    window.addEventListener('click', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio);
+
     return () => {
       socket.off("rider-assigned", riderAssignedHandler);
       socket.off("rider-interested", riderInterestedHandler);
       socket.off("rider-intrested", riderInterestedHandler);
       socket.off("notification", notificationHandler);
       socket.off("booking-cancelled", bookingCancelledHandler);
+      window.removeEventListener('click', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
     };
   }, [dispatch, isAuthenticated, user?._id]);
 
