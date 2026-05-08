@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Sun, Moon, Menu, X, Bell, LogOut, Compass, Calendar, LayoutDashboard, Wallet, User } from 'lucide-react';
 import { useAppDispatch, useAuth, useTheme } from '@/app/store/store';
 import { logout } from '@/app/store/slices/authSlice';
-import { toggleTheme } from '@/app/store/slices/uiWalletSlice';
+import { toggleTheme } from '@/app/store/slices/uiSlice';
 import Avatar from '@/shared/ui/Avatar/Avatar';
 import Button from '@/shared/ui/Button/Button';
 import logo from '@/shared/assets/logo.png';

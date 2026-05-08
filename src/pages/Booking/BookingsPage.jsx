@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useAppDispatch, useBookings } from '@/app/store/store';
 import { loadMyBookings, setBookings } from '@/app/store/slices/bookingSlice';
-import { pushToast } from '@/app/store/slices/uiWalletSlice';
+import { pushToast } from '@/app/store/slices/uiSlice';
 import { useGetBookingsQuery } from '@/app/store/slices/bookingApi';
 import PageWrapper from '@/shared/layout/PageWrapper/PageWrapper';
 import Button from '@/shared/ui/Button/Button';

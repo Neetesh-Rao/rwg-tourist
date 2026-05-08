@@ -12,7 +12,7 @@ import { debitWallet } from '@/app/store/slices/authSlice';
 import { useCreateBookingMutation } from '@/app/store/slices/bookingApi';
 import { usePayWithWalletMutation } from '@/app/store/slices/walletApi';
 import { useCreateOrderMutation, useVerifyPaymentMutation } from '@/app/store/slices/paymentApi';
-import { pushToast } from '@/app/store/slices/uiWalletSlice';
+import { pushToast } from '@/app/store/slices/uiSlice';
 import PageWrapper from '@/shared/layout/PageWrapper/PageWrapper';
 import Button from '@/shared/ui/Button/Button';
 import Input from '@/shared/ui/Input/Input';
