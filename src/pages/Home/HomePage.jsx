@@ -4,7 +4,7 @@ import { MapPin, Shield, Globe, Calendar, Star, ArrowRight, ChevronRight, Compas
 import PageWrapper from '@/shared/layout/PageWrapper/PageWrapper';
 import Button from '@/shared/ui/Button/Button';
 import Card from '@/shared/ui/Card/Card';
-import { CITIES, MOCK_RIDERS } from '@/shared/config/constants';
+import { CITIES } from '@/shared/config/constants';
 import { formatINR } from '@/shared/lib/helpers';
 
 const FEATURES = [
@@ -16,16 +16,16 @@ const FEATURES = [
 
 const STATS = [
   { val: '500+', label: 'Verified guides' },
-  { val: '15+',  label: 'Indian cities' },
+  { val: '15+', label: 'Indian cities' },
   { val: '4.9★', label: 'Average rating' },
-  { val: '2K+',  label: 'Happy tourists' },
+  { val: '2K+', label: 'Happy tourists' },
 ];
 
 const HOW = [
-  { n: '01', t: 'Register',     d: 'Quick sign-up with your travel preferences. Takes under 2 minutes.' },
-  { n: '02', t: 'Pick a city',  d: 'Choose your destination, date, and browse available verified guides.' },
+  { n: '01', t: 'Register', d: 'Quick sign-up with your travel preferences. Takes under 2 minutes.' },
+  { n: '02', t: 'Pick a city', d: 'Choose your destination, date, and browse available verified guides.' },
   { n: '03', t: 'Book a guide', d: 'Select your guide, add your stops, and pay a small 30% advance.' },
-  { n: '04', t: 'Explore!',     d: 'Your guide meets you at your pinned location. Adventure begins.' },
+  { n: '04', t: 'Explore!', d: 'Your guide meets you at your pinned location. Adventure begins.' },
 ];
 
 export default function HomePage() {
@@ -46,7 +46,7 @@ export default function HomePage() {
           <div className="space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/50 text-brand-700 dark:text-brand-400 text-xs font-semibold">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              Live in {CITIES.length}+ cities across India
+              Live in {CITIES.length || 15}+ cities across India
             </div>
 
             <h1 className="font-display text-5xl sm:text-6xl lg:text-[68px] font-bold text-ink-900 dark:text-ink-100 leading-[1.04] tracking-tight">
@@ -91,18 +91,24 @@ export default function HomePage() {
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                {CITIES.slice(0, 6).map(city => (
+                {(CITIES.length > 0 ? CITIES : [
+                  { id: 'jaipur', name: 'Jaipur', tagline: 'The Pink City' },
+                  { id: 'delhi', name: 'Delhi', tagline: 'The Capital' },
+                  { id: 'agra', name: 'Agra', tagline: 'City of Taj Mahal' },
+                  { id: 'goa', name: 'Goa', tagline: 'Pearl of Orient' },
+                  { id: 'mumbai', name: 'Mumbai', tagline: 'City of Dreams' },
+                  { id: 'udaipur', name: 'Udaipur', tagline: 'City of Lakes' },
+                ]).slice(0, 6).map(city => (
                   <button
                     key={city.id}
                     onClick={() => setActiveCity(city)}
-                    className={`p-3.5 rounded-2xl border text-left transition-all duration-200 ${
-                      activeCity.id === city.id
-                        ? 'border-brand-400 bg-brand-50 dark:bg-brand-900/20'
-                        : 'border-[var(--border)] hover:border-[var(--border-md)] hover:bg-surface-2 dark:hover:bg-surface-3'
-                    }`}
+                    className={`p-3.5 rounded-2xl border text-left transition-all duration-200 ${activeCity?.id === city.id
+                      ? 'border-brand-400 bg-brand-50 dark:bg-brand-900/20'
+                      : 'border-[var(--border)] hover:border-[var(--border-md)] hover:bg-surface-2 dark:hover:bg-surface-3'
+                      }`}
                   >
-                    <MapPin className={`w-4 h-4 mb-1.5 ${activeCity.id === city.id ? 'text-brand-500' : 'text-ink-400'}`} />
-                    <p className={`text-sm font-semibold ${activeCity.id === city.id ? 'text-ink-900 dark:text-ink-100' : 'text-ink-600 dark:text-ink-400'}`}>{city.name}</p>
+                    <MapPin className={`w-4 h-4 mb-1.5 ${activeCity?.id === city.id ? 'text-brand-500' : 'text-ink-400'}`} />
+                    <p className={`text-sm font-semibold ${activeCity?.id === city.id ? 'text-ink-900 dark:text-ink-100' : 'text-ink-600 dark:text-ink-400'}`}>{city.name}</p>
                     <p className="text-[11px] text-ink-400 mt-0.5">{city.tagline}</p>
                   </button>
                 ))}
@@ -110,15 +116,15 @@ export default function HomePage() {
 
               <div className="border-t border-[var(--border)] pt-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-ink-500">Guides available in {activeCity.name}</p>
+                  <p className="text-sm text-ink-500">Guides available in {activeCity?.name || '...'}</p>
                   <span className="text-xs font-semibold text-green-600 dark:text-green-400">3 online now</span>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-display text-3xl font-bold text-gradient">{formatINR(activeCity.base)}</span>
+                  <span className="font-display text-3xl font-bold text-gradient">{formatINR(activeCity?.base || 0)}</span>
                   <span className="text-ink-400 text-sm">base fare</span>
                 </div>
-                <Button variant="primary" fullWidth size="lg" onClick={() => navigate('/register')}>
-                  Book in {activeCity.name}
+                <Button variant="primary" fullWidth size="lg" onClick={() => navigate('/dashboard')}>
+                  Book in {activeCity?.name || '...'}
                 </Button>
               </div>
             </div>
@@ -186,56 +192,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── TOP GUIDES ────────────────────────────────────── */}
-      <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between mb-10">
-          <div>
-            <p className="text-xs tracking-[0.3em] text-brand-500 uppercase font-semibold mb-2">Our guides</p>
-            <h2 className="font-display text-3xl font-bold text-ink-900 dark:text-ink-100">Meet verified experts</h2>
-          </div>
-          <Button variant="ghost" iconRight={<ChevronRight className="w-4 h-4" />} onClick={() => navigate('/register')}>
-            View all
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {MOCK_RIDERS.map((rider, i) => (
-            <Card key={rider.id} hover className={`animate-fade-up delay-${(i + 1) * 100}`}>
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-100 to-brand-200 dark:from-brand-900/30 dark:to-brand-800/20 flex items-center justify-center text-2xl font-bold text-brand-700 dark:text-brand-400 font-display flex-shrink-0">
-                  {rider.name.charAt(0)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-ink-900 dark:text-ink-100">{rider.name}</h3>
-                    {rider.isOnline && (
-                      <span className="flex items-center gap-1 text-[10px] text-green-600 dark:text-green-400 font-semibold">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500" />Online
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    {[1,2,3,4,5].map(n => <Star key={n} className={`w-3 h-3 ${n <= Math.round(rider.rating) ? 'text-brand-500 fill-brand-500' : 'text-ink-200'}`} />)}
-                    <span className="text-xs text-ink-500 ml-1">{rider.rating} ({rider.totalRides})</span>
-                  </div>
-                  <p className="text-xs text-ink-500 mt-2 line-clamp-2">{rider.bio}</p>
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {rider.guideExpertise.map(ex => (
-                      <span key={ex} className="text-[10px] px-2 py-0.5 rounded-full bg-surface-2 dark:bg-surface-3 text-ink-600 dark:text-ink-400 border border-[var(--border)] font-medium">
-                        {ex}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-[var(--border)] flex justify-between items-center">
-                <span className="text-sm text-ink-500">From <span className="font-mono font-bold text-ink-900 dark:text-ink-100">₹{rider.pricePerHour}/hr</span></span>
-                <Button variant="outline" size="sm" onClick={() => navigate('/register')}>Book</Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </section>
+      {/* Guides section removed temporarily until backend integration */}
 
       {/* ── CTA ───────────────────────────────────────────── */}
       <section className="py-24 max-w-4xl mx-auto px-4 sm:px-6 text-center">

@@ -4,6 +4,8 @@ import { Provider } from 'react-redux';
 import { store, useAuth } from '@/app/store/store';
 import 'leaflet/dist/leaflet.css';
 import { Toaster } from 'react-hot-toast';
+import { useGetPlatformConfigQuery } from '@/app/store/slices/configApi';
+import { initPlatformConfig } from '@/shared/config/constants';
 
 import HomePage from '@/pages/Home/HomePage';
 import RegisterPage from '@/pages/Auth/Register/RegisterPage';
@@ -30,6 +32,28 @@ function PublicRoute({ children }) {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return children;
   return <Navigate to={user?.profileCompleted ? "/dashboard" : "/profile"} replace />;
+}
+
+function ConfigLoader({ children }) {
+  const { isLoading, data } = useGetPlatformConfigQuery();
+  
+  React.useEffect(() => {
+    if (data) {
+      // Update the let variables in constants.js
+      initPlatformConfig();
+    }
+  }, [data]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-neutral-950 text-white">
+        <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm font-medium tracking-widest uppercase text-ink-400">Loading Configuration...</p>
+      </div>
+    );
+  }
+
+  return children;
 }
 
 function AppRoutes() {
@@ -61,7 +85,9 @@ export default function App() {
   return (
     <Provider store={store}>
       <BrowserRouter>
-        <AppRoutes />
+        <ConfigLoader>
+          <AppRoutes />
+        </ConfigLoader>
       </BrowserRouter>
     </Provider>
   );

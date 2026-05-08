@@ -74,11 +74,15 @@ const normalizeBooking = (booking) => ({
   status: normalizeBookingStatus(booking?.bookingStatus || booking?.status),
   otp: booking?.rideOTP || booking?.otp || booking?.rideOtp || '',
   rider: (typeof booking?.riderId === 'object' ? booking.riderId : null) || booking?.rider || booking?.guide || null,
-  estimatedPrice: booking?.pricing ? {
-    estimatedMin: booking.pricing?.estimatedRange?.min || 0,
-    estimatedMax: booking.pricing?.estimatedRange?.max || 0,
-    advanceAmount: booking.pricing?.advanceAmount || 0,
-  } : booking?.estimatedPrice || null,
+  pricing: booking?.pricing ? {
+    ...booking.pricing,
+    serviceFee: booking.pricing.serviceFee || 0,
+    rideFee: booking.pricing.rideFee || 0,
+    totalAmount: booking.pricing.totalAmount || 0,
+    totalDistance: booking.pricing.totalDistance || 0,
+    distanceSegments: booking.pricing.distanceSegments || [],
+    advanceAmount: booking.pricing.advanceAmount || 0,
+  } : null,
 });
 
 function BookingDetail({ booking, onTrack,onClick }) {
@@ -124,9 +128,9 @@ function BookingDetail({ booking, onTrack,onClick }) {
         
       </div>
 
-      {booking.estimatedPrice && (
+      {booking.pricing && (
         <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between flex-wrap gap-2 mb-3">
-          <span className="text-xs text-ink-400">Est. total: <span className="font-mono font-bold text-ink-800 dark:text-ink-200">{formatINR(booking.estimatedPrice.estimatedMin)}-{formatINR(booking.estimatedPrice.estimatedMax)}</span></span>
+          <span className="text-xs text-ink-400">Total: <span className="font-mono font-bold text-brand-600 dark:text-brand-400">{formatINR(booking.pricing.totalAmount)}</span></span>
           <button 
             onClick={(e) => { e.stopPropagation(); setShowPricingDetails(true); }}
             className="text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors"
@@ -169,41 +173,41 @@ function BookingDetail({ booking, onTrack,onClick }) {
             <h2 className="text-lg font-display font-bold text-ink-900 dark:text-ink-100">Pricing Breakdown</h2>
           </div>
 
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-surface-2 dark:bg-surface-3 p-3 rounded-lg">
-                <p className="text-xs text-ink-400 mb-1">Base Fare</p>
-                <p className="font-mono font-bold text-ink-900 dark:text-ink-100">{formatINR(booking.estimatedPrice?.baseFare || 0)}</p>
+            <div className="space-y-2 pt-2">
+              <div className="space-y-1 pb-2 border-b border-dashed border-[var(--border)]">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-ink-400 mb-2">Distance Segments</p>
+                {booking.pricing?.distanceSegments?.map((seg, i) => (
+                  <div key={i} className="flex justify-between text-[11px] items-center">
+                    <span className="text-ink-500 truncate mr-3">{seg.from} → {seg.to}</span>
+                    <span className="font-mono font-bold text-ink-700 dark:text-ink-300 flex-shrink-0">{seg.distance} km</span>
+                  </div>
+                ))}
               </div>
-              <div className="bg-surface-2 dark:bg-surface-3 p-3 rounded-lg">
-                <p className="text-xs text-ink-400 mb-1">Distance Cost</p>
-                <p className="font-mono font-bold text-ink-900 dark:text-ink-100">{formatINR(booking.estimatedPrice?.distanceCost || 0)}</p>
+              <div className="flex justify-between text-sm pt-1">
+                <span className="text-ink-500">Total Distance</span>
+                <span className="font-mono font-bold">{booking.pricing?.totalDistance || 0} km</span>
               </div>
-              <div className="bg-surface-2 dark:bg-surface-3 p-3 rounded-lg">
-                <p className="text-xs text-ink-400 mb-1">Time Charge</p>
-                <p className="font-mono font-bold text-ink-900 dark:text-ink-100">{formatINR(booking.estimatedPrice?.timeCharge || 0)}</p>
+              <div className="flex justify-between text-sm">
+                <span className="text-ink-500">Service Fee</span>
+                <span className="font-mono font-bold">{formatINR(booking.pricing?.serviceFee || 0)}</span>
               </div>
-              <div className="bg-surface-2 dark:bg-surface-3 p-3 rounded-lg">
-                <p className="text-xs text-ink-400 mb-1">Guide Service Fee</p>
-                <p className="font-mono font-bold text-ink-900 dark:text-ink-100">{formatINR(booking.estimatedPrice?.guideServiceFee || 0)}</p>
+              <div className="flex justify-between text-sm">
+                <span className="text-ink-500">Ride Fee</span>
+                <span className="font-mono font-bold">{formatINR(booking.pricing?.rideFee || 0)}</span>
               </div>
             </div>
 
             <div className="bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/40 p-3 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-ink-600 dark:text-ink-400">Demand Multiplier</span>
-                <span className="font-mono font-bold text-brand-700 dark:text-brand-400">x{booking.estimatedPrice?.demandMultiplier || 1}</span>
-              </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-ink-600 dark:text-ink-400">Advance Amount</span>
-                <span className="font-mono font-bold text-brand-700 dark:text-brand-400">{formatINR(booking.estimatedPrice?.advanceAmount || 0)}</span>
+                <span className="text-sm text-ink-600 dark:text-ink-400">Advance Amount (30%)</span>
+                <span className="font-mono font-bold text-brand-700 dark:text-brand-400">{formatINR(booking.pricing?.advanceAmount || 0)}</span>
               </div>
             </div>
 
             <div className="border-t border-[var(--border)] pt-3 mt-4">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-ink-900 dark:text-ink-100">Estimated Total</span>
-                <span className="font-mono font-bold text-lg text-brand-600 dark:text-brand-400">{formatINR(booking.estimatedPrice.estimatedMin)}-{formatINR(booking.estimatedPrice.estimatedMax)}</span>
+                <span className="font-bold text-ink-900 dark:text-ink-100">Total Amount</span>
+                <span className="font-mono font-bold text-lg text-brand-600 dark:text-brand-400">{formatINR(booking.pricing?.totalAmount || 0)}</span>
               </div>
             </div>
 
@@ -219,12 +223,10 @@ function BookingDetail({ booking, onTrack,onClick }) {
                 <p className="text-xs text-ink-500 mt-2">Amount Paid: <span className="font-mono font-bold">{formatINR(booking.payment.amountPaid || 0)}</span></p>
               </div>
             )}
+            <Button variant="primary" fullWidth onClick={() => setShowPricingDetails(false)} className="mt-4">
+              Close
+            </Button>
           </div>
-
-          <Button variant="primary" fullWidth onClick={() => setShowPricingDetails(false)} className="mt-4">
-            Close
-          </Button>
-        </div>
       </Modal>
     )}
     </>
@@ -255,7 +257,7 @@ function VerticalStepper({ booking, onClose }) {
   const steps = [
     { 
       label: 'Booking & Payment',
-      description: `Request placed for ${booking.city} on ${formatDate(booking.date)}. Paid ${formatINR(booking.estimatedPrice?.advanceAmount || 0)} advance.`,
+      description: `Request placed for ${booking.city} on ${formatDate(booking.date)}. Paid ${formatINR(booking.pricing?.advanceAmount || 0)} advance.`,
     },
     {
       label: 'Admin Approval',
