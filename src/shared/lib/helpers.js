@@ -4,6 +4,16 @@ export const genId=(p='id')=>`${p}_${Date.now()}_${Math.random().toString(36).sl
 export const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 export const genOTP=()=>String(Math.floor(1000+Math.random()*9000));
 
+export const playNotificationSound = () => {
+  try {
+    const audio = new Audio('/Notification.mp3');
+    audio.play().catch(e => console.warn("Audio play blocked:", e));
+  } catch (err) {
+    console.warn("Failed to play notification sound:", err);
+  }
+};
+
+
 export const ls={
   get:(k,fb=null)=>{try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):fb;}catch{return fb;}},
   set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}},
