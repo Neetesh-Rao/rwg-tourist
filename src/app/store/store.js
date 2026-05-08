@@ -13,10 +13,9 @@ export const store = configureStore({
     ui: uiSlice.reducer,
     wallet: walletSlice.reducer,
     [api.reducerPath]: api.reducer,
-    [configApi.reducerPath]: configApi.reducer
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(api.middleware, configApi.middleware)
+    getDefaultMiddleware().concat(api.middleware)
 });
 
 export const useAppDispatch = () => useDispatch();
