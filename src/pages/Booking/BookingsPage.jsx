@@ -70,7 +70,8 @@ function BookingDetail({ booking, onTrack, onClick, onCancel }) {
 
         {booking.estimatedPrice && (
           <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between flex-wrap gap-2 mb-3">
-            <span className="text-xs text-ink-400">Est. total: <span className="font-mono font-bold text-ink-800 dark:text-ink-200">{formatINR(booking.estimatedPrice.estimatedMin)}-{formatINR(booking.estimatedPrice.estimatedMax)}</span></span>
+            <span className="text-xs text-ink-400">Est. DIstance: <span className="font-mono font-bold text-ink-800 dark:text-ink-200">{(booking.pricing.totalDistance)} KM</span></span>
+             <span className="text-xs text-ink-400">Est. Amount: <span className="font-mono font-bold text-ink-800 dark:text-ink-200">{formatINR(booking.pricing.totalAmount)}</span></span>
             <button 
               onClick={(e) => { e.stopPropagation(); setShowPricingDetails(true); }}
               className="text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors"
