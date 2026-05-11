@@ -14,6 +14,7 @@ import { formatINR, formatDate } from '@/shared/lib/helpers';
 import { useRateRiderMutation } from '@/app/store/slices/bookingApi';
 import Modal from '@/shared/ui/Modal/Modal';
 import { toast } from 'react-hot-toast';
+import { useGetBookingsQuery } from '@/app/store/slices/bookingApi';
 
 function BookingCard({ booking }) {
   const navigate = useNavigate();
@@ -58,9 +59,8 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const user = useUser();
-  const bookings = useBookings();
-
-  // useEffect(() => { dispatch(loadMyBookings()); }, [dispatch]);
+  const { data: bookingsResponse, isLoading: isBookingsLoading } = useGetBookingsQuery();
+  const bookings = bookingsResponse?.data || [];
 
   const upcoming = bookings.filter(b => ['confirmed', 'assigned', 'pending', 'searching'].includes(b.status));
   const completed = bookings.filter(b => b.status === 'completed');
