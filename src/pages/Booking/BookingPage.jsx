@@ -27,6 +27,13 @@ import MapPicker from '@/shared/map/MapPicker/MapPicker';
 import { CITIES, RIDE_TYPES, CITY_STOPS, LANGUAGES, PAYMENT_METHODS, UPI_APPS } from '@/shared/config/constants';
 import { formatINR, getTomorrow, calculateRouteDistance } from '@/shared/lib/helpers';
 
+const VEHICLE_TYPES = [
+  { id: 'bike', label: 'Bike', emoji: '🏍️', desc: 'Fast & agile' },
+  { id: 'bike-light', label: 'Bike Light', emoji: '🏍️', desc: 'Comfortable' },
+  { id: 'auto', label: 'Auto', emoji: '🛺', desc: 'Local vibe' },
+  { id: 'cab', label: 'Cab', emoji: '🚕', desc: 'Spacious' },
+];
+
 const STEPS = ['Trip Details', 'Your Stops', 'Review & Pay'];
 
 const formatBookingTime = (time) => {
@@ -153,6 +160,7 @@ function TripDetails() {
     pickupAddress: draft.pickupAddress || '',
     pickupLat: draft.pickupLat || null,
     pickupLng: draft.pickupLng || null,
+    vehicleType: draft.vehicleType || 'bike',
   });
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -192,6 +200,21 @@ function TripDetails() {
               <span className="text-sm font-bold text-ink-900 dark:text-ink-100">{rt.label}</span>
               <span className="text-xs text-ink-400 mt-0.5">{rt.desc}</span>
               {rt.hours > 0 && <span className="text-xs font-mono text-brand-500 mt-2 font-bold">{rt.hours}h</span>}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs font-semibold uppercase tracking-widest text-ink-500 dark:text-ink-400">Vehicle type *</label>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {VEHICLE_TYPES.map(vt => (
+            <label key={vt.id}
+              className={`flex flex-col p-4 rounded-2xl border cursor-pointer transition-all duration-200 ${form.vehicleType === vt.id ? 'border-brand-400 bg-brand-50 dark:bg-brand-900/20 shadow-glow' : 'border-[var(--border-md)] hover:border-brand-300 dark:hover:border-brand-700'}`}>
+              <input type="radio" name="vehicleType" value={vt.id} checked={form.vehicleType === vt.id} onChange={() => set('vehicleType', vt.id)} className="sr-only" />
+              <span className="text-2xl mb-2">{vt.emoji}</span>
+              <span className="text-sm font-bold text-ink-900 dark:text-ink-100">{vt.label}</span>
+              <span className="text-xs text-ink-400 mt-0.5">{vt.desc}</span>
             </label>
           ))}
         </div>
@@ -475,6 +498,7 @@ function ReviewPay() {
         lat: draft.pickupLat,
         lng: draft.pickupLng,
       },
+      vehicleType: draft.vehicleType,
       language: draft.preferredLanguage,
       genderPreference: mapGenderPreference(draft.genderPreference),
       stops: (draft.stops || []).map((stop) => ({
@@ -543,7 +567,7 @@ function ReviewPay() {
           <span className="text-xs font-semibold uppercase tracking-widest text-ink-500">Trip Summary</span>
         </div>
         <div className="p-5 grid grid-cols-2 gap-4">
-          {[['City', draft.city], ['Date', draft.date], ['Time', `${draft.startTime} – ${draft.endTime}`], ['Tour', selRT?.label || '—']].map(([k, v]) => (
+          {[['City', draft.city], ['Date', draft.date], ['Time', `${draft.startTime} – ${draft.endTime}`], ['Tour', selRT?.label || '—'], ['Vehicle', draft.vehicleType || 'Bike']].map(([k, v]) => (
             <div key={k}><p className="text-xs text-ink-400 mb-0.5">{k}</p><p className="text-sm font-semibold text-ink-900 dark:text-ink-100 capitalize">{v}</p></div>
           ))}
           <div className="col-span-2"><p className="text-xs text-ink-400 mb-0.5">Pickup</p><p className="text-sm font-semibold text-ink-900 dark:text-ink-100">{draft.pickupAddress}</p></div>
