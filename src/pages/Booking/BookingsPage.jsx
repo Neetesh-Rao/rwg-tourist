@@ -186,13 +186,13 @@ function VerticalStepper({ booking, onClose }) {
 
   if (isCancelled) {
     activeStep = 1;
-  } else if (booking.status === 'completed') {
+  } else if (booking.payment.status === 'paid' && booking.bookingStatus === 'completed') {
     activeStep = 4;
-  } else if (booking.status === 'ongoing' || booking.status === 'assigned') {
+  } else if (booking.bookingStatus === 'assigned' || booking.bookingStatus === 'ongoing') {
     activeStep = 3;
-  } else if (booking.status === 'searching') {
+  } else if (booking.bookingStatus === 'assigned' || booking.bookingStatus === 'ongoing') {
     activeStep = 2;
-  } else if (booking.status === 'pending') {
+  } else if (booking.payment.status === 'partial_paid') {
     activeStep = 1;
   }
 
@@ -202,18 +202,14 @@ function VerticalStepper({ booking, onClose }) {
       description: `Request placed for ${booking.city} on ${formatDate(booking.date)}. Paid ${formatINR(booking.estimatedPrice?.advanceAmount || 0)} advance.`,
     },
     {
-      label: 'Admin Approval',
+      label: 'Guide Assignment',
       description: isCancelled ? 'Your booking was cancelled.' : (booking.status === 'pending') ? 'Verifying details and getting things ready...' : 'Booking approved by admin.',
       isError: isCancelled
     },
-    {
-      label: 'Guide Assignment',
-      description: booking.rider ? `Assigned to ${booking.rider.name}.` : (booking.status === 'searching') ? 'Matching you with a verified guide...' : 'Awaiting assignment.',
-    },
-    {
+     {
       label: 'Ride Details',
-      description: booking.status === 'completed' ? 'Your ride was successfully completed!' : (booking.status === 'assigned' || booking.status === 'ongoing') ? 'Your guide is ready. View details below.' : 'Ride details will appear here soon.',
-      content: (booking.status === 'assigned' || booking.status === 'ongoing') ? (
+      description: booking.status === 'completed' ? 'Your ride was successfully completed!' : (booking.bookingStatus === 'assigned') ? 'Your guide is ready. View details below.' : 'Ride details will appear here soon.',
+      content: (booking.bookingStatus === 'assigned') ? (
         <div className="space-y-3 mt-3 bg-surface-2 dark:bg-surface-3 p-4 rounded-2xl border border-[var(--border)] overflow-hidden relative">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/30 flex flex-shrink-0 items-center justify-center">
@@ -299,7 +295,12 @@ function VerticalStepper({ booking, onClose }) {
           </Button>
         </div>
       ) : null
-    }
+    },
+    {
+      label: 'Ride Completed',
+      description: booking.rider ? `Assigned to ${booking.rider.name}.` : (booking.status === 'searching') ? 'Matching you with a verified guide...' : 'Awaiting assignment.',
+    },
+   
   ];
 
   return (
