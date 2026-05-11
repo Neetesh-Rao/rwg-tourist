@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Compass, MapPin, Calendar, Award, ChevronRight, Zap, Star } from 'lucide-react';
 import { useAppDispatch, useUser, useBookings } from '@/app/store/store';
@@ -45,7 +45,7 @@ function BookingCard({ booking }) {
           <span className="text-sm font-mono font-bold text-ink-900 dark:text-ink-100">
             {formatINR(booking.estimatedPrice.estimatedMin)}–{formatINR(booking.estimatedPrice.estimatedMax)}
           </span>
-          
+           
 
         </div>
         
