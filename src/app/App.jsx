@@ -18,6 +18,7 @@ import ProfilePage from '@/pages/Profile/ProfilePage';
 import WalletPage from '@/pages/Wallet/WalletPage';
 
 import SocketManager from "../socket/SocketManager";
+import RatingModal from "@/shared/ui/RatingModal/RatingModal";
 
 // Guards
 function PrivateRoute({ children }) {
@@ -80,6 +81,7 @@ function AppRoutes() {
       <Route path="*"         element={<Navigate to="/" replace />} />
     </Routes>
       <SocketManager />
+      <RatingModal />
     </>
   );
 }

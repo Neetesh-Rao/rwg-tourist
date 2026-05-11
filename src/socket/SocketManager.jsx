@@ -4,6 +4,7 @@ import { connectTouristSocket } from "./socket";
 import { pushToast } from "../app/store/slices/uiSlice";
 import { useAuth } from "../app/store/store";
 import { playNotificationSound } from "../shared/lib/helpers";
+import { api } from "../app/store/service";
 
 export default function SocketManager() {
   const dispatch = useDispatch();
@@ -78,11 +79,12 @@ export default function SocketManager() {
 
     socket.on("ride-completed", (data) => {
       console.log("RIDE COMPLETED SOCKET:", data);
-      // Reload bookings to trigger rating modal on Dashboard
-      dispatch(loadMyBookings());
+      playNotificationSound();
+      // Invalidate bookings cache → triggers refetch → RatingModal auto-pops globally
+      dispatch(api.util.invalidateTags(['Booking']));
       dispatch(pushToast({
         type: 'success',
-        title: 'Tour Completed!',
+        title: 'Tour Completed! 🎉',
         message: 'Hope you enjoyed your journey. Please rate your guide!'
       }));
     });
