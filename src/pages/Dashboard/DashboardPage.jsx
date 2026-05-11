@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Compass, MapPin, Calendar, Award, ChevronRight, Zap, Star } from 'lucide-react';
-import { useAppDispatch, useUser, useBookings } from '@/app/store/store';
-import { loadMyBookings } from '@/app/store/slices/bookingSlice';
+import { useUser } from '@/app/store/store';
 import PageWrapper from '@/shared/layout/PageWrapper/PageWrapper';
 import Button from '@/shared/ui/Button/Button';
 import Card from '@/shared/ui/Card/Card';
@@ -11,14 +10,13 @@ import Badge from '@/shared/ui/Badge/Badge';
 import EmptyState from '@/shared/ui/EmptyState/EmptyState';
 import { BOOKING_STATUS } from '@/shared/config/constants';
 import { formatINR, formatDate } from '@/shared/lib/helpers';
-import { useRateRiderMutation } from '@/app/store/slices/bookingApi';
-import Modal from '@/shared/ui/Modal/Modal';
-import { toast } from 'react-hot-toast';
 import { useGetBookingsQuery } from '@/app/store/slices/bookingApi';
 
 function BookingCard({ booking }) {
   const navigate = useNavigate();
-  const cfg = BOOKING_STATUS[booking.status] || BOOKING_STATUS.pending;
+  const cfg =
+  BOOKING_STATUS[booking.bookingStatus] ||
+  BOOKING_STATUS.pending;
   return (
     <Card interactive onClick={() => navigate(`/bookings`)} className="!p-5">
       <div className="flex items-start justify-between gap-2 mb-3">
@@ -46,10 +44,7 @@ function BookingCard({ booking }) {
           <span className="text-sm font-mono font-bold text-ink-900 dark:text-ink-100">
             {formatINR(booking.estimatedPrice.estimatedMin)}–{formatINR(booking.estimatedPrice.estimatedMax)}
           </span>
-           
-
         </div>
-        
       )}
     </Card>
   );
@@ -57,13 +52,17 @@ function BookingCard({ booking }) {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const user = useUser();
   const { data: bookingsResponse, isLoading: isBookingsLoading } = useGetBookingsQuery();
   const bookings = bookingsResponse?.data || [];
 
-  const upcoming = bookings.filter(b => ['confirmed', 'assigned', 'pending', 'searching'].includes(b.status));
-  const completed = bookings.filter(b => b.status === 'completed');
+  const upcoming = bookings.filter(b =>
+    ['assigned', 'pending', 'searching', 'ongoing']
+      .includes(b.bookingStatus)
+  );
+  const completed = bookings.filter(
+    b => b.bookingStatus === 'completed'
+  );
 
   const stats = [
     { val: bookings.length, label: 'Total trips', Icon: Compass, color: 'text-brand-500' },
@@ -71,41 +70,6 @@ export default function DashboardPage() {
     { val: upcoming.length, label: 'Upcoming', Icon: Calendar, color: 'text-green-500' },
     { val: completed.length, label: 'Completed', Icon: Award, color: 'text-purple-500' },
   ];
-
-  const [rateRider, { isLoading: isRating }] = useRateRiderMutation();
-  const [showRateModal, setShowRateModal] = useState(false);
-  const [pendingRatingBooking, setPendingRatingBooking] = useState(null);
-  const [selectedRating, setSelectedRating] = useState(0);
-
-  useEffect(() => {
-    // Check for the most recent completed booking that hasn't been reviewed
-    const unreviewed = bookings.find(b => 
-      b.status === 'completed' && 
-      (!b.review || !b.review.isReviewed)
-    );
-    if (unreviewed) {
-      setPendingRatingBooking(unreviewed);
-      setShowRateModal(true);
-    }
-  }, [bookings]);
-
-  const handleRate = async (rating) => {
-    if (!pendingRatingBooking) return;
-    try {
-      await rateRider({ 
-        bookingId: pendingRatingBooking._id || pendingRatingBooking.id, 
-        rating 
-      }).unwrap();
-      toast.success('Thank you for your rating! ⭐');
-      setShowRateModal(false);
-      setSelectedRating(0);
-      setPendingRatingBooking(null);
-      // Refresh bookings to update local state
-      dispatch(loadMyBookings());
-    } catch (err) {
-      toast.error('Failed to submit rating. Please try again.');
-    }
-  };
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -176,7 +140,7 @@ export default function DashboardPage() {
             />
           ) : (
             <div className="grid md:grid-cols-2 gap-4">
-              {upcoming.slice(0, 4).map(b => <BookingCard key={b.id} booking={b} />)}
+              {upcoming.slice(0, 4).map(b => <BookingCard key={b._id} booking={b} />)}
             </div>
           )}
         </div>
@@ -199,51 +163,6 @@ export default function DashboardPage() {
           </div>
         </Card>
       </div>
-
-      {/* ── RATING MODAL ────────────────────────────────── */}
-      <Modal 
-        open={showRateModal} 
-        onClose={() => setShowRateModal(false)}
-        title="Rate your journey"
-        size="sm"
-      >
-        <div className="text-center py-4">
-          <div className="w-20 h-20 rounded-3xl bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center text-brand-600 dark:text-brand-400 mx-auto mb-6">
-            <Award className="w-10 h-10" />
-          </div>
-          <h3 className="font-display text-xl font-bold text-ink-900 dark:text-ink-100 mb-2">
-            How was your tour?
-          </h3>
-          <p className="text-sm text-ink-500 dark:text-ink-400 mb-8 px-4">
-            Your feedback helps us maintain the best quality of local guides in {pendingRatingBooking?.city}.
-          </p>
-          
-          <div className="flex items-center justify-center gap-2 mb-10">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                onMouseEnter={() => setSelectedRating(star)}
-                onMouseLeave={() => setSelectedRating(0)}
-                onClick={() => handleRate(star)}
-                disabled={isRating}
-                className="group relative p-1 transition-transform active:scale-95"
-              >
-                <Star 
-                  className={`w-10 h-10 transition-all duration-200 ${
-                    (selectedRating || 0) >= star 
-                      ? 'text-brand-500 fill-brand-500 scale-110' 
-                      : 'text-ink-200 dark:text-ink-700'
-                  } group-hover:drop-shadow-brand`} 
-                />
-              </button>
-            ))}
-          </div>
-
-          <p className="text-[10px] uppercase font-black tracking-widest text-ink-400">
-            Tap a star to rate instantly
-          </p>
-        </div>
-      </Modal>
     </PageWrapper>
   );
 }
