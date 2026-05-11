@@ -24,6 +24,15 @@ export const bookingApi = api.injectEndpoints({
       }),
       invalidatesTags: ["Booking"]
     }),
+
+    rateRider: builder.mutation({
+      query: ({ bookingId, rating }) => ({
+        url: `/tourist/booking/${bookingId}/rate`,
+        method: "PATCH",
+        body: { rating }
+      }),
+      invalidatesTags: ["Booking"]
+    }),
   })
 });
 
@@ -31,4 +40,5 @@ export const {
   useCreateBookingMutation,
   useGetBookingsQuery,
   useCancelBookingMutation,
+  useRateRiderMutation,
 } = bookingApi;
