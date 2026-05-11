@@ -75,6 +75,17 @@ export default function SocketManager() {
     socket.on("rider-assigned", riderAssignedHandler);
     socket.on("rider-interested", riderInterestedHandler);
     socket.on("rider-intrested", riderInterestedHandler);
+
+    socket.on("ride-completed", (data) => {
+      console.log("RIDE COMPLETED SOCKET:", data);
+      // Reload bookings to trigger rating modal on Dashboard
+      dispatch(loadMyBookings());
+      dispatch(pushToast({
+        type: 'success',
+        title: 'Tour Completed!',
+        message: 'Hope you enjoyed your journey. Please rate your guide!'
+      }));
+    });
     socket.on("notification", notificationHandler);
     socket.on("booking-cancelled", bookingCancelledHandler);
 
