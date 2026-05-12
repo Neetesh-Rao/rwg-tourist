@@ -674,6 +674,7 @@ export default function BookingPage() {
   const stepContent = [<TripDetails />, <AddStops />, <ReviewPay />];
   return (
     <PageWrapper>
+      
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
         <div className="mb-8">
           <div className="text-xs tracking-[0.3em] text-brand-500 uppercase font-semibold mb-2">New booking</div>
