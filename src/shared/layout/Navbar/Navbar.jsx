@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Sun, Moon, Menu, X, Bell, LogOut, Compass, Calendar, LayoutDashboard, Wallet, User } from 'lucide-react';
+import { Sun, Moon, Menu, X, Bell, LogOut, Compass, Calendar, LayoutDashboard, Receipt, User } from 'lucide-react';
 import { useAppDispatch, useAuth, useTheme } from '@/app/store/store';
 import { logout } from '@/app/store/slices/authSlice';
 import { toggleTheme } from '@/app/store/slices/uiSlice';
@@ -12,7 +12,7 @@ const LINKS = [
   { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { to: '/book', label: 'Book Tour', Icon: Compass },
   { to: '/bookings', label: 'My Trips', Icon: Calendar },
-  { to: '/transactions', label: 'Transactions', Icon: Wallet },
+  { to: '/transactions', label: 'Transactions', Icon: Receipt },
   { to: '/profile', label: 'Profile', Icon: User },
 ];
 
@@ -122,7 +122,7 @@ export default function Navbar() {
             ) : (
               <div className="space-y-2 pt-2">
                 <Button variant="secondary" fullWidth onClick={() => navigate('/login')}>Sign in</Button>
-                <Button variant="primary" fullWidth onClick={() => navigate('/register')}>Get Started — Free</Button>
+                <Button variant="primary" fullWidth onClick={() => navigate('/login')}>Get Started — Free</Button>
               </div>
             )}
           </div>

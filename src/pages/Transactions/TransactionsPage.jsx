@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { TrendingUp, CheckCircle2, Calendar, MapPin, CreditCard, Clock, ChevronRight, Receipt } from 'lucide-react';
-import { useGetPaymentHistoryQuery } from '@/app/store/slices/paymentApi';
+import { CheckCircle2, Calendar, MapPin, CreditCard, Clock, ChevronRight, Receipt } from 'lucide-react';
+import { useGetPaymentHistoryQuery } from '@/app/store/slices/transactionApi';
 import PageWrapper from '@/shared/layout/PageWrapper/PageWrapper';
 import Card from '@/shared/ui/Card/Card';
 import Badge from '@/shared/ui/Badge/Badge';
 import Modal from '@/shared/ui/Modal/Modal';
 import { formatINR, formatDate } from '@/shared/lib/helpers';
 
-export default function WalletPage() {
+export default function TransactionsPage() {
   const { data: historyResponse, isLoading } = useGetPaymentHistoryQuery(undefined, {
     refetchOnMountOrArgChange: true,
   });

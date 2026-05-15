@@ -1,9 +1,9 @@
 // ── BottomNav ────────────────────────────────────────────
 import React from'react';
 import{NavLink}from'react-router-dom';
-import{LayoutDashboard,Compass,Calendar,Wallet,User}from'lucide-react';
+import{LayoutDashboard,Compass,Calendar,Receipt,User}from'lucide-react';
 
-const TABS=[{to:'/dashboard',Icon:LayoutDashboard,label:'Home'},{to:'/book',Icon:Compass,label:'Book'},{to:'/bookings',Icon:Calendar,label:'Trips'},{to:'/transactions',Icon:Wallet,label:'Transactions'},{to:'/profile',Icon:User,label:'Profile'}];
+const TABS=[{to:'/dashboard',Icon:LayoutDashboard,label:'Home'},{to:'/book',Icon:Compass,label:'Book'},{to:'/bookings',Icon:Calendar,label:'Trips'},{to:'/transactions',Icon:Receipt,label:'Transactions'},{to:'/profile',Icon:User,label:'Profile'}];
 
 export function BottomNav(){
   return(

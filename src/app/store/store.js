@@ -35,8 +35,8 @@ export const useTheme = () => useAppSelector((state) => state.ui.theme);
 export const useUI = () => useAppSelector((state) => state.ui);
 export const useModals = () => useAppSelector((state) => state.ui.modal);
 
-// Wallet Selectors (Balance is stored in auth.user)
-export const useWalletBalance = () => useAppSelector((state) => state.auth.user?.walletBalance || 0);
+// Balance Selectors (Balance is stored in auth.user)
+export const useBalance = () => useAppSelector((state) => state.auth.user?.walletBalance || 0);
 
 // Booking Selectors
 export const useBooking = () => useAppSelector((state) => state.booking);
@@ -47,6 +47,6 @@ export const useSlots = () => useAppSelector((state) => state.booking.availableS
 export const useStep = () => useAppSelector((state) => state.booking.step);
 
 // Config Selectors
-export const useConfig = () => useAppSelector((state) => 
+export const useConfig = () => useAppSelector((state) =>
   configApi.endpoints.getPlatformConfig.select()(state).data
 );

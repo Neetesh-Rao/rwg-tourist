@@ -1,6 +1,6 @@
 import { api } from "../service";
 
-export const paymentApi = api.injectEndpoints({
+export const transactionApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getPaymentHistory: builder.query({
       query: () => ({
@@ -23,13 +23,24 @@ export const paymentApi = api.injectEndpoints({
         url: "/payment/verify-payment",
         method: "POST",
         body: data
-      })
-    })
+      }),
+      invalidatesTags: ["Transaction", "Booking"]
+    }),
+
+    payWithBalance: builder.mutation({
+      query: (data) => ({
+        url: "/tourist/wallet",
+        method: "PATCH",
+        body: data
+      }),
+      invalidatesTags: ["Balance", "Transaction"]
+    }),
   })
 });
 
 export const {
   useGetPaymentHistoryQuery,
   useCreateOrderMutation,
-  useVerifyPaymentMutation
-} = paymentApi;
+  useVerifyPaymentMutation,
+  usePayWithBalanceMutation,
+} = transactionApi;
