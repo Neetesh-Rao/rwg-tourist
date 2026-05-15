@@ -2,16 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Clock, Plus, X, ChevronRight, ChevronLeft, Check, Shield, Zap, Wallet, CreditCard, Smartphone, Landmark, Loader2 } from 'lucide-react';
 import {
-  useAppDispatch, useBooking, useDraft, useEstimate, useSlots, useStep, useUser,
+  useAppDispatch, useDraft, useEstimate, useStep, useUser,
 } from '@/app/store/store';
 import {
-  setStep, updateDraft, selectSlot, bookingCreated, addStop, removeStop, resetWizard,
+  setStep, updateDraft, bookingCreated, addStop, removeStop, resetWizard,
   fetchSlots, estimatePrice,
 } from '@/app/store/slices/bookingSlice';
-import { debitWallet } from '@/app/store/slices/authSlice';
+import { debitBalance } from '@/app/store/slices/authSlice';
 import { useCreateBookingMutation } from '@/app/store/slices/bookingApi';
-import { usePayWithWalletMutation } from '@/app/store/slices/walletApi';
-import { useCreateOrderMutation, useVerifyPaymentMutation } from '@/app/store/slices/paymentApi';
+import { useCreateOrderMutation, useVerifyPaymentMutation, usePayWithBalanceMutation } from '@/app/store/slices/transactionApi';
 import { pushToast } from '@/app/store/slices/uiSlice';
 import PageWrapper from '@/shared/layout/PageWrapper/PageWrapper';
 import Button from '@/shared/ui/Button/Button';
@@ -24,7 +23,7 @@ import Modal from '@/shared/ui/Modal/Modal';
 import StarRating from '@/shared/ui/StarRating/StarRating';
 import { Skeleton } from '@/shared/ui/Loader/Loader';
 import MapPicker from '@/shared/map/MapPicker/MapPicker';
-import { CITIES, RIDE_TYPES, CITY_STOPS, LANGUAGES, PAYMENT_METHODS, UPI_APPS } from '@/shared/config/constants';
+import { CITIES, RIDE_TYPES, CITY_STOPS, LANGUAGES, PAYMENT_METHODS } from '@/shared/config/constants';
 import { formatINR, getTomorrow, calculateRouteDistance } from '@/shared/lib/helpers';
 
 const VEHICLE_TYPES = [
@@ -79,9 +78,9 @@ const PAYMENT_META = {
   },
   wallet: {
     Icon: Wallet,
-    title: 'RwG Wallet',
-    helper: 'The advance amount will be deducted directly from your wallet.',
-    cta: 'Pay with Wallet',
+    title: 'RwG Balance',
+    helper: 'The advance amount will be deducted directly from your balance.',
+    cta: 'Pay with Balance',
   },
   netbank: {
     Icon: Landmark,
@@ -433,7 +432,7 @@ function ReviewPay() {
   const estimate = useEstimate();
   const user = useUser();
   const [createBooking, { isLoading }] = useCreateBookingMutation();
-  const [payWithWallet, { isLoading: isPayingWithWallet }] = usePayWithWalletMutation();
+  const [payWithBalance, { isLoading: isPayingWithBalance }] = usePayWithBalanceMutation();
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
   const [verifyPayment, { isLoading: isVerifyingPayment }] = useVerifyPaymentMutation();
   const [payMethod, setPayMethod] = useState('upi');
@@ -445,7 +444,7 @@ function ReviewPay() {
   const walletBalance = user?.walletBalance || 0;
   const advanceAmount = estimate?.advanceAmount || 0;
   const paymentMeta = PAYMENT_META[payMethod] || PAYMENT_META.upi;
-  const isBusy = isLoading || isPayingWithWallet || isCreatingOrder || isVerifyingPayment;
+  const isBusy = isLoading || isPayingWithBalance || isCreatingOrder || isVerifyingPayment;
   const canUseWallet = walletBalance >= advanceAmount;
 
   const paymentStageLabel = {
@@ -454,7 +453,7 @@ function ReviewPay() {
     preparing_order: 'Preparing Razorpay order',
     awaiting_payment: 'Waiting for payment',
     verifying_payment: 'Verifying payment',
-    paying_with_wallet: 'Debiting wallet',
+    paying_with_wallet: 'Debiting balance',
   }[paymentStage];
 
   const openRazorpayCheckout = ({ orderPayload, bookingId }) =>
@@ -536,8 +535,8 @@ function ReviewPay() {
 
       if (payMethod === 'wallet') {
         setPaymentStage('paying_with_wallet');
-        await payWithWallet({ user_id: user?._id || user?.id, booking_id: bookingId, amount: String(advanceAmount) }).unwrap();
-        dispatch(debitWallet(advanceAmount));
+        await payWithBalance({ user_id: user?._id || user?.id, booking_id: bookingId, amount: String(advanceAmount) }).unwrap();
+        dispatch(debitBalance(advanceAmount));
       } else {
         await loadRazorpayScript();
         setPaymentStage('preparing_order');

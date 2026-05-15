@@ -27,16 +27,18 @@ export default function Modal({ open, onClose, title, children, size = 'md', cla
       />
       
       {/* Modal Content */}
-      <div className={`relative card w-full ${W[size] || W.md} max-h-[90vh] overflow-y-auto animate-scale-in rounded-3xl shadow-2xl border border-[var(--border)] ${className}`}>
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-2xl font-extrabold tracking-tight text-ink-900 dark:text-ink-100">{title}</h2>
-          <button 
-            onClick={onClose} 
-            className="w-10 h-10 rounded-2xl flex items-center justify-center text-ink-400 hover:text-ink-900 dark:hover:text-ink-100 hover:bg-surface-2 dark:hover:bg-surface-3 transition-all hover:rotate-90"
-          >
-            ✕
-          </button>
-        </div>
+      <div className={`relative card w-full ${W[size] || W.md} max-h-[90vh] overflow-y-auto animate-scale-in rounded-3xl shadow-2xl border border-[var(--border)] p-5 ${className}`}>
+        {title && (
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-ink-900 dark:text-ink-100">{title}</h2>
+            <button 
+              onClick={onClose} 
+              className="w-8 h-8 rounded-full flex items-center justify-center text-ink-400 hover:text-ink-900 dark:hover:text-ink-100 hover:bg-surface-2 dark:hover:bg-surface-3 transition-all"
+            >
+              ✕
+            </button>
+          </div>
+        )}
         {children}
       </div>
     </div>,

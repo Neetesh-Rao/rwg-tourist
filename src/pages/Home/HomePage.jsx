@@ -59,7 +59,7 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button variant="primary" size="xl" onClick={() => navigate('/register')}
+              <Button variant="primary" size="xl" onClick={() => navigate('/login')}
                 iconRight={<ArrowRight className="w-5 h-5" />}>
                 Start your journey
               </Button>
@@ -207,7 +207,7 @@ export default function HomePage() {
             <p className="text-ink-500 dark:text-ink-400 mb-8 text-lg">
               Join thousands of travellers exploring India the right way.
             </p>
-            <Button variant="primary" size="xl" onClick={() => navigate('/register')} iconRight={<ArrowRight className="w-5 h-5" />}>
+            <Button variant="primary" size="xl" onClick={() => navigate('/login')} iconRight={<ArrowRight className="w-5 h-5" />}>
               Get started — it's free
             </Button>
           </div>

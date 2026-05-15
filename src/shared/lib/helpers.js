@@ -2,7 +2,6 @@ import { DISTANCE_DEFAULTS, PRICING_CONFIG, GLOBAL_RATES } from '../config/const
 
 export const genId=(p='id')=>`${p}_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
 export const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-export const genOTP=()=>String(Math.floor(1000+Math.random()*9000));
 
 export const playNotificationSound = () => {
   try {
@@ -25,10 +24,7 @@ export const formatDate=(s,opts={})=>{if(!s)return '';try{return new Date(s).toL
 export const formatTime=s=>{if(!s)return '';try{const[h,m]=s.split(':');const hr=parseInt(h,10);return `${hr>12?hr-12:hr||12}:${m} ${hr>=12?'PM':'AM'}`;}catch{return s;}};
 export const getTomorrow=()=>{const d=new Date();d.setDate(d.getDate()+1);return d.toISOString().split('T')[0];};
 
-export const isValidEmail=v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 export const isValidPhone=v=>/^[6-9]\d{9}$/.test(v);
-export const isValidName=v=>v&&v.trim().length>=2;
-export const isValidPass=v=>v&&v.length>=8;
 
 // Calculates distance between two points in KM
 export const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -144,10 +140,4 @@ export const calcEstimate=({city, rideTypeId, hoursBooked=5, actualKm=0, segment
   };
 };
 
-export const createMockBooking=(draft,rider,estimate)=>{
-  const user=ls.get('rwg_user');
-  const b={id:genId('bkg'),tourist:user,rider,status:'confirmed',city:draft.city,date:draft.date,startTime:draft.startTime,endTime:draft.endTime,rideType:draft.rideType,pickupAddress:draft.pickupAddress,pickupLat:draft.pickupLat||null,pickupLng:draft.pickupLng||null,stops:draft.stops||[],genderPreference:draft.genderPreference,estimatedPrice:estimate,advancePaid:estimate?.advanceAmount||0,otp:genOTP(),createdAt:new Date().toISOString(),specialRequests:draft.specialRequests||'',paymentStatus:'paid',paymentId:genId('pay')};
-  const ex=ls.get('rwg_bookings',[]);
-  ls.set('rwg_bookings',[b,...ex]);
-  return b;
-};
+

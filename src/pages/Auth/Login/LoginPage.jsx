@@ -270,10 +270,7 @@ setInfoMessage(getApiMessage(payload, `OTP sent to +91 ${phone}`));
         </form>
       )}
 
-      {/* <Divider label="New to Ride with Guide?" className="mt-6" />
-      <Link to="/register">
-        <Button variant="secondary" size="lg" fullWidth>Create a free account</Button>
-      </Link> */}
+
     </AuthLayout>
   );
 }

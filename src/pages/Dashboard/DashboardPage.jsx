@@ -86,7 +86,7 @@ export default function DashboardPage() {
               <p className="text-sm text-ink-400 font-medium">{greeting} 👋</p>
               <h1 className="font-display text-3xl font-bold text-ink-900 dark:text-ink-100">{user?.name?.split(' ')[0]}</h1>
               <p className="text-xs text-ink-400 mt-0.5">
-                Wallet: <span className="font-mono font-semibold text-brand-500">{formatINR(user?.walletBalance || 0)}</span>
+                Balance: <span className="font-mono font-semibold text-brand-500">{formatINR(user?.walletBalance || 0)}</span>
               </p>
             </div>
           </div>
@@ -111,7 +111,7 @@ export default function DashboardPage() {
           {[
             { label: 'Book Tour', icon: <Compass className="w-5 h-5" />, to: '/book', color: 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 border-brand-200 dark:border-brand-800/40 hover:bg-brand-100 dark:hover:bg-brand-900/30' },
             { label: 'My Trips', icon: <Calendar className="w-5 h-5" />, to: '/bookings', color: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800/40 hover:bg-blue-100' },
-            { label: 'Wallet', icon: <Zap className="w-5 h-5" />, to: '/transactions', color: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800/40 hover:bg-green-100' },
+            { label: 'Transactions', icon: <Zap className="w-5 h-5" />, to: '/transactions', color: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800/40 hover:bg-green-100' },
             { label: 'Profile', icon: <Star className="w-5 h-5" />, to: '/profile', color: 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800/40 hover:bg-purple-100' },
           ].map(a => (
             <Link key={a.to} to={a.to}>

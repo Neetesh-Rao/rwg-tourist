@@ -97,13 +97,13 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    creditWallet: (state, { payload }) => {
+    creditBalance: (state, { payload }) => {
       if (state.user) {
         state.user.walletBalance = (state.user.walletBalance || 0) + payload;
         ls.set('rwg_user', state.user);
       }
     },
-    debitWallet: (state, { payload }) => {
+    debitBalance: (state, { payload }) => {
       if (state.user) {
         state.user.walletBalance = Math.max(
           0,
@@ -153,8 +153,8 @@ export const {
   setAuthSession,
   logout,
   clearError,
-  creditWallet,
-  debitWallet
+  creditBalance,
+  debitBalance
 } = authSlice.actions;
 
 export default authSlice.reducer;
