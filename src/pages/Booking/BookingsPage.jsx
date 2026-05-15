@@ -255,12 +255,22 @@ function VerticalStepper({ booking, onClose }) {
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <button className="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/20 flex flex-shrink-0 items-center justify-center text-brand-600 dark:text-brand-400 hover:text-brand-700 transition-colors border border-brand-200 dark:border-brand-800/40 shadow-sm" title="Message Guide">
+                  <a 
+                    href={booking.rider?.phone ? `https://wa.me/${booking.rider.phone.replace(/\D/g, '').startsWith('91') ? booking.rider.phone.replace(/\D/g, '') : '91' + booking.rider.phone.replace(/\D/g, '')}` : '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/20 flex flex-shrink-0 items-center justify-center text-brand-600 dark:text-brand-400 hover:text-brand-700 transition-colors border border-brand-200 dark:border-brand-800/40 shadow-sm" 
+                    title="Message Guide"
+                  >
                     <MessageCircle className="w-4 h-4" />
-                  </button>
-                  <button className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 flex flex-shrink-0 items-center justify-center text-green-600 dark:text-green-400 hover:text-green-700 transition-colors border border-green-200 dark:border-green-800/40 shadow-sm" title="Call Guide">
+                  </a>
+                  <a 
+                    href={`tel:${booking.rider?.phone?.replace(/[^\d+]/g, '') || ''}`}
+                    className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 flex flex-shrink-0 items-center justify-center text-green-600 dark:text-green-400 hover:text-green-700 transition-colors border border-green-200 dark:border-green-800/40 shadow-sm" 
+                    title="Call Guide"
+                  >
                     <Phone className="w-4 h-4" />
-                  </button>
+                  </a>
                 </div>
               </div>
 
