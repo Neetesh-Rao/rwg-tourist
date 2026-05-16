@@ -300,9 +300,42 @@ function VerticalStepper({ booking, onClose }) {
               <Shield className="w-4 h-4 flex-shrink-0" /> <span className="font-medium">Pick-up OTP:</span> <span className="font-mono font-bold tracking-widest">{booking.otp}</span>
             </div>
           )}
-          <Button variant="primary" fullWidth onClick={() => { onClose(); navigate('/tracking', { state: { booking } }); }} icon={<Navigation2 className="w-4 h-4"/>}>
-            Track Ride
-          </Button>
+          <div className="flex gap-2">
+  
+  <Button
+    variant="secondary"
+    className="flex-1"
+    onClick={() => {
+      onClose();
+
+      navigate(`/chat/${booking._id}`, {
+        state: {
+          booking,
+          rider: booking.rider
+        }
+      });
+    }}
+    icon={<MessageCircle className="w-4 h-4" />}
+  >
+    Chat
+  </Button>
+
+  <Button
+    variant="primary"
+    className="flex-1"
+    onClick={() => {
+      onClose();
+
+      navigate('/tracking', {
+        state: { booking }
+      });
+    }}
+    icon={<Navigation2 className="w-4 h-4"/>}
+  >
+    Track Ride
+  </Button>
+
+</div>
         </div>
       ) : null
     },
