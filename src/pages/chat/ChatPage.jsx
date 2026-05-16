@@ -117,12 +117,8 @@ export default function ChatPage() {
   }, [messagesData, conversationId, dispatch]);
 
   // Join chat room
-  useEffect(() => {
-    const socket = getTouristSocket();
-    if (socket && conversationId && socketConnected) {
-      socket.emit("join-chat", { conversationId });
-    }
-  }, [conversationId, socketConnected]);
+// Join chat room
+
 
   // Auto scroll to bottom
   useEffect(() => {

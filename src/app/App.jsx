@@ -40,7 +40,7 @@ function PublicRoute({ children }) {
 
 function ConfigLoader({ children }) {
   const { isLoading, data } = useGetPlatformConfigQuery();
-  
+
   React.useEffect(() => {
     if (data) {
       // Update the let variables in constants.js
@@ -65,25 +65,22 @@ function AppRoutes() {
     <>     <Toaster
       position="bottom-right"
       reverseOrder={false}
-   />
-    <Routes>
-    
-      <Route path="/"         element={<HomePage />} />
+    />
+      <Routes>
 
-      <Route path="/login"    element={<PublicRoute><LoginPage /></PublicRoute>} />
-      <Route path="/dashboard"element={<ProfileCompletedRoute><DashboardPage /></ProfileCompletedRoute>} />
-      <Route path="/book"     element={<ProfileCompletedRoute><BookingPage /></ProfileCompletedRoute>} />
-      <Route path="/bookings" element={<ProfileCompletedRoute><BookingsPage /></ProfileCompletedRoute>} />
-      <Route path="/tracking" element={<ProfileCompletedRoute><TrackingPage /></ProfileCompletedRoute>} />
-      <Route path="/profile"  element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-      <Route path="/transactions"   element={<ProfileCompletedRoute><TransactionsPage /></ProfileCompletedRoute>} />
-      <Route path="/Transactions"   element={<Navigate to="/transactions" replace />} />
-      <Route path="*"         element={<Navigate to="/" replace />} />
-      <Route
-  path="/chat/:bookingId"
-  element={<ChatPage />}
-/>
-    </Routes>
+        <Route path="/" element={<HomePage />} />
+
+        <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/dashboard" element={<ProfileCompletedRoute><DashboardPage /></ProfileCompletedRoute>} />
+        <Route path="/book" element={<ProfileCompletedRoute><BookingPage /></ProfileCompletedRoute>} />
+        <Route path="/bookings" element={<ProfileCompletedRoute><BookingsPage /></ProfileCompletedRoute>} />
+        <Route path="/tracking" element={<ProfileCompletedRoute><TrackingPage /></ProfileCompletedRoute>} />
+        <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+        <Route path="/transactions" element={<ProfileCompletedRoute><TransactionsPage /></ProfileCompletedRoute>} />
+        <Route path="/Transactions" element={<Navigate to="/transactions" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/chat/:bookingId" element={<ChatPage />} />
+      </Routes>
       <SocketManager />
       <RatingModal />
     </>
