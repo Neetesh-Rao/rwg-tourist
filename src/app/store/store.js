@@ -1,11 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { useDispatch, useSelector } from "react-redux";
+import { createSelector } from "reselect";
 import { api } from "./service";
 
 // Slices
 import authReducer from "./slices/authSlice";
 import bookingReducer from "./slices/bookingSlice";
 import uiReducer from "./slices/uiSlice";
+import chatReducer from "./slices/chatSlice";
 
 // API
 import { configApi } from "./slices/configApi";
@@ -15,6 +17,7 @@ export const store = configureStore({
     auth: authReducer,
     booking: bookingReducer,
     ui: uiReducer,
+    chat: chatReducer,
     [api.reducerPath]: api.reducer,
   },
   middleware: (getDefaultMiddleware) =>
@@ -45,6 +48,22 @@ export const useDraft = () => useAppSelector((state) => state.booking.draft);
 export const useEstimate = () => useAppSelector((state) => state.booking.priceEstimate);
 export const useSlots = () => useAppSelector((state) => state.booking.availableSlots);
 export const useStep = () => useAppSelector((state) => state.booking.step);
+
+// Chat Selectors
+export const useChat = () => useAppSelector((state) => state.chat);
+export const useActiveChatId = () => useAppSelector((state) => state.chat.activeChat);
+export const useSocketConnected = () => useAppSelector((state) => state.chat.socketConnected);
+
+// Memoized chat messages selector to prevent unnecessary re-renders
+const selectChatState = (state) => state.chat;
+const selectChatId = (_, id) => id;
+export const selectChatMessagesMemo = createSelector(
+  [selectChatState, selectChatId],
+  (chat, id) => chat.messages[id] || []
+);
+
+export const useChatMessages = (id) => useAppSelector((state) => selectChatMessagesMemo(state, id));
+export const useTypingUser = (bookingId) => useAppSelector((state) => state.chat.typingUsers[bookingId]);
 
 // Config Selectors
 export const useConfig = () => useAppSelector((state) =>

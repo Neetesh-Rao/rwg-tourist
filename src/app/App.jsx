@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import { Toaster } from 'react-hot-toast';
 import { useGetPlatformConfigQuery } from '@/app/store/slices/configApi';
 import { updatePlatformConstants } from '@/shared/config/constants';
+import ChatPage from "@/pages/chat/ChatPage";
 
 import HomePage from '@/pages/Home/HomePage';
 import LoginPage from '@/pages/Auth/Login/LoginPage';
@@ -78,6 +79,10 @@ function AppRoutes() {
       <Route path="/transactions"   element={<ProfileCompletedRoute><TransactionsPage /></ProfileCompletedRoute>} />
       <Route path="/Transactions"   element={<Navigate to="/transactions" replace />} />
       <Route path="*"         element={<Navigate to="/" replace />} />
+      <Route
+  path="/chat/:bookingId"
+  element={<ChatPage />}
+/>
     </Routes>
       <SocketManager />
       <RatingModal />
