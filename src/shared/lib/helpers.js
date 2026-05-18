@@ -115,9 +115,14 @@ export const calcEstimate=({city, rideTypeId, hoursBooked=5, actualKm=0, segment
   const d = city.demand || 1.0;
   
   // Calculate specific categories
-  const rideFee = Math.round((dist + time) * d);
-  const serviceFee = Math.round((base + guide) * d);
-  const total = rideFee + serviceFee;
+  const rawTotal = Math.round((dist + time + base + guide) * d);
+  
+  // Admin Commission Percent (Default 30%)
+  const adminPercent = pConfig.ADMIN_COMMISSION_PERCENT !== undefined ? pConfig.ADMIN_COMMISSION_PERCENT : 0.3;
+  
+  const serviceFee = Math.round(rawTotal * adminPercent); // Admin Share
+  const rideFee = rawTotal - serviceFee; // Rider Share
+  const total = rawTotal; // Total Tourist Pays
 
   return {
     baseFare: base,
@@ -135,6 +140,7 @@ export const calcEstimate=({city, rideTypeId, hoursBooked=5, actualKm=0, segment
       formula: pConfig.FORMULA,
       description: pConfig.DESCRIPTION,
       roadFactor: pConfig.ROAD_FACTOR,
+      adminCommission: adminPercent,
       isRealRoute: actualKm > 0
     }
   };
