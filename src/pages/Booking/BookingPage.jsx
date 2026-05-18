@@ -608,10 +608,12 @@ function ReviewPay() {
 
             {[ 
               ['Total distance (est.)', `${estimate.totalDistance} km`],
-              ['Service fee', formatINR(estimate.serviceFee)], 
-              ['Ride fee', formatINR(estimate.rideFee)] 
+              ['Base fare', formatINR(estimate.baseFare)], 
+              ['Distance charge', formatINR(estimate.distanceCharge)], 
+              ['Time charge', formatINR(estimate.timeCharge)], 
+              ['Guide fee', formatINR(estimate.guideFee)]
             ].map(([l, v]) => (
-              <div key={l} className="flex justify-between text-sm">
+              <div key={l} className="flex justify-between text-sm items-center py-0.5">
                 <span className="text-ink-500">{l}</span>
                 <span className="font-mono text-ink-900 dark:text-ink-100 font-bold">{v}</span>
               </div>
