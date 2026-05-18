@@ -42,11 +42,11 @@ function BookingDetail({ booking, onTrack, onClick, onCancel }) {
               <h3 className="font-display text-base font-bold text-ink-900 dark:text-ink-100">{booking.city}</h3>
               <div className="flex items-center gap-2">
                 <Badge variant={bvar} dot={cfg.dot}>{cfg.label}</Badge>
-                {booking.otp && (
+                {/* {booking.otp && (
                   <span className="text-[10px] font-bold text-green-600 bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded border border-green-200 dark:border-green-800/40">
                     OTP: {booking.otp}
                   </span>
-                )}
+                )} */}
               </div>
             </div>
             <p className="text-xs text-ink-400">{formatDate(booking.date)} · {booking.startTime}-{booking.endTime}</p>

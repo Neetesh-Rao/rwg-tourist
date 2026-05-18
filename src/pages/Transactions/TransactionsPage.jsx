@@ -143,7 +143,7 @@ export default function TransactionsPage() {
                 </div>
                 <div className="p-4 rounded-2xl bg-amber-500/[0.03] border border-amber-500/10 shadow-sm">
                   <p className="text-[9px] font-bold text-amber-500 uppercase tracking-widest mb-1">Due</p>
-                  <p className="text-lg font-bold text-amber-600 dark:text-amber-400">{formatINR(selectedBooking.payment?.remainingAmount || 0)}</p>
+                  <p className="text-lg font-bold text-amber-600 dark:text-amber-400">{formatINR(selectedBooking.remainingAmount || 0)}</p>
                 </div>
               </div>
 
