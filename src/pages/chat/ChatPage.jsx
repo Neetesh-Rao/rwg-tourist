@@ -257,8 +257,8 @@ export default function ChatPage() {
               >
                 <div
                   className={`max-w-xs px-4 py-2.5 rounded-2xl text-sm break-words ${msg.senderId === currentUser.id
-                      ? "bg-[var(--primary)] text-white rounded-br-none"
-                      : "bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] rounded-bl-none"
+                    ? "bg-[var(--primary)] text-white rounded-br-none"
+                    : "bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] rounded-bl-none"
                     }`}
                 >
                   <p>{msg.message}</p>
