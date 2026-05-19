@@ -26,7 +26,7 @@ export default function ChatPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const currentUser = useUser();
-  
+
   const [text, setText] = useState("");
   const [conversationId, setConversationId] = useState(null);
   const [recipientInfo, setRecipientInfo] = useState(null);
@@ -50,6 +50,10 @@ export default function ChatPage() {
     const socket = getTouristSocket();
 
     if (socket) {
+      if (socket.connected) {
+        dispatch(setSocketConnected(true));
+      }
+
       socket.on("connect", () => {
         dispatch(setSocketConnected(true));
       });
@@ -91,13 +95,13 @@ export default function ChatPage() {
           touristId: currentUser.id,
           riderId: "RIDER_ID_FROM_BOOKING"
         });
-        
+
         const result = await createConv({
           bookingId,
           touristId: currentUser.id,
           riderId: "RIDER_ID_FROM_BOOKING"
         }).unwrap();
-        
+
         console.log("Conversation created:", result);
         setConversationId(result.data._id || result._id);
       } catch (err) {
@@ -117,8 +121,12 @@ export default function ChatPage() {
   }, [messagesData, conversationId, dispatch]);
 
   // Join chat room
-// Join chat room
-
+  useEffect(() => {
+    const socket = getTouristSocket();
+    if (socket && bookingId && socketConnected) {
+      socket.emit("join-chat", { bookingId });
+    }
+  }, [bookingId, socketConnected]);
 
   // Auto scroll to bottom
   useEffect(() => {
@@ -130,10 +138,9 @@ export default function ChatPage() {
 
     try {
       const messageData = {
-        conversationId,
+        bookingId,
         senderId: currentUser.id,
         senderRole: "tourist",
-        receiverId: "RIDER_ID", // Get from booking
         message: text.trim()
       };
 
@@ -164,7 +171,7 @@ export default function ChatPage() {
   };
   if (!currentUser) {
     return (
-      <Modal isOpen={true} onClose={handleClose} size="lg">
+      <Modal open={true} onClose={handleClose} size="lg">
         <div className="p-6">
           <EmptyState
             icon="🔐"
@@ -178,7 +185,7 @@ export default function ChatPage() {
 
   if (!bookingId) {
     return (
-      <Modal isOpen={true} onClose={handleClose} size="lg">
+      <Modal open={true} onClose={handleClose} size="lg">
         <div className="p-6">
           <EmptyState
             icon="💬"
@@ -192,7 +199,7 @@ export default function ChatPage() {
 
   if (error) {
     return (
-      <Modal isOpen={true} onClose={handleClose} size="lg">
+      <Modal open={true} onClose={handleClose} size="lg">
         <div className="p-6">
           <EmptyState
             icon="❌"
@@ -210,7 +217,7 @@ export default function ChatPage() {
   }
 
   return (
-    <Modal isOpen={true} onClose={handleClose} size="lg">
+    <Modal open={true} onClose={handleClose} size="lg">
       <div className="flex flex-col h-[70vh] bg-[var(--bg)]">
         {/* Chat Header */}
         <div className="sticky top-0 z-10 bg-[var(--bg)] border-b border-[var(--border)] p-4 flex items-center justify-between">
@@ -245,24 +252,22 @@ export default function ChatPage() {
             messages.map((msg, idx) => (
               <div
                 key={msg._id || idx}
-                className={`flex ${
-                  msg.senderId === currentUser.id ? "justify-end" : "justify-start"
-                }`}
+                className={`flex ${msg.senderId === currentUser.id ? "justify-end" : "justify-start"
+                  }`}
               >
                 <div
-                  className={`max-w-xs px-4 py-2.5 rounded-2xl text-sm break-words ${
-                    msg.senderId === currentUser.id
+                  className={`max-w-xs px-4 py-2.5 rounded-2xl text-sm break-words ${msg.senderId === currentUser.id
                       ? "bg-[var(--primary)] text-white rounded-br-none"
                       : "bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] rounded-bl-none"
-                  }`}
+                    }`}
                 >
                   <p>{msg.message}</p>
                   <span className="text-xs opacity-70 mt-1 block">
                     {msg.createdAt
                       ? new Date(msg.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit"
-                        })
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      })
                       : ""}
                   </span>
                 </div>
