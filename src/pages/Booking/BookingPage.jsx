@@ -169,7 +169,12 @@ function TripDetails() {
     if (!form.city || !form.date || !form.pickupAddress) return;
     dispatch(updateDraft(form));
     dispatch(fetchSlots({ city: form.city, date: form.date, startTime: form.startTime, endTime: form.endTime, genderPreference: form.genderPreference }));
-    dispatch(estimatePrice({ cityId: form.city, rideTypeId: form.rideType,  hoursBooked: selRT?.hours}));
+    dispatch(estimatePrice({ 
+      city: form.city, 
+      durationType: form.rideType,
+      pickupLocation: { lat: form.pickupLat, lng: form.pickupLng, address: form.pickupAddress },
+      stops: []
+    }));
     dispatch(setStep(2));
   }
 
@@ -397,22 +402,13 @@ function AddStops() {
           variant="primary" 
           size="lg" 
           onClick={() => {
-            const pickup = { lat: draft.pickupLat, lng: draft.pickupLng };
-            const { total, segments } = calculateRouteDistance(pickup, current);
-            const selRT = RIDE_TYPES.find(r => r.id === draft.rideType);
-            
-            console.log('--- DISTANCE DEBUG ---');
-            console.log('Pickup:', pickup);
-            console.log('Stops:', current.length);
-            console.log('Calculated KM:', total);
-            console.log('Segments:', segments);
+            // Backend now handles distance calculation
 
             dispatch(estimatePrice({ 
-              cityId: draft.city, 
-              rideTypeId: draft.rideType, 
-              hoursBooked: selRT?.hours || 5,
-              actualKm: total,
-              segments: segments
+              city: draft.city, 
+              durationType: draft.rideType,
+              pickupLocation: { lat: draft.pickupLat, lng: draft.pickupLng },
+              stops: current
             }));
             dispatch(setStep(3));
           }} 
