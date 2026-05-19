@@ -48,6 +48,7 @@ export default function MapPicker({ city, value, onChange, riders = [], height =
     }
   }, []);
 
+
   const placeMarker = useCallback(async (lat, lng, map) => {
     if (!L || !map) return;
     const icon = goldMarker();
@@ -66,6 +67,33 @@ export default function MapPicker({ city, value, onChange, riders = [], height =
     setAddress(addr);
     onChange({ lat, lng }, addr);
   }, [goldMarker, reverseGeocode, onChange]);
+    const searchLocation = useCallback(async () => {
+  if (!search.trim() || !mapInstance.current) return;
+
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(search)}&limit=1`
+    );
+
+    const data = await response.json();
+
+    if (data.length === 0) return;
+
+    const lat = parseFloat(data[0].lat);
+    const lng = parseFloat(data[0].lon);
+
+    // Move map
+    mapInstance.current.flyTo([lat, lng], 16, {
+      duration: 1.5,
+    });
+
+    // Place marker
+    await placeMarker(lat, lng, mapInstance.current);
+
+  } catch (err) {
+    console.error("Location search failed", err);
+  }
+}, [search, placeMarker]);
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
@@ -166,12 +194,22 @@ export default function MapPicker({ city, value, onChange, riders = [], height =
         <div className="absolute top-3 left-3 right-3 z-[999] flex gap-2">
           <div className="flex-1 glass rounded-xl flex items-center gap-2 px-3 py-2.5 border border-[var(--border)]">
             <Search className="w-4 h-4 text-ink-400 flex-shrink-0" />
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search location…"
-              className="flex-1 bg-transparent text-sm text-[var(--text)] placeholder-[var(--text-3)] outline-none"
-            />
+           <input
+  value={search}
+  onChange={e => setSearch(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter') {
+      searchLocation();
+    }
+  }}
+  placeholder="Search location…"
+  className="flex-1 bg-transparent text-sm text-[var(--text)] placeholder-[var(--text-3)] outline-none"
+/><button
+  onClick={searchLocation}
+  className="glass border border-[var(--border)] rounded-xl px-3 flex items-center justify-center text-ink-400 hover:text-brand-500 hover:border-brand-400 transition-all"
+>
+  <Search className="w-4 h-4" />
+</button>
           </div>
           <button
             onClick={handleGPS}
