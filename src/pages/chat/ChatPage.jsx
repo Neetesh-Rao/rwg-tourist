@@ -14,6 +14,7 @@ import {
   setSocketConnected,
   setTypingUser
 } from "@/app/store/slices/chatSlice";
+import { useGetBookingByIdQuery } from "@/app/store/slices/bookingApi";
 import { useGetMessagesQuery, useCreateConversationMutation } from "@/app/store/slices/chatApi";
 import Modal from "@/shared/ui/Modal/Modal";
 import Button from "@/shared/ui/Button/Button";
@@ -37,6 +38,8 @@ export default function ChatPage() {
   const socketConnected = useSocketConnected();
 
   // API Hooks
+  const { data: bookingData } = useGetBookingByIdQuery(bookingId);
+  const booking = bookingData?.data;
   const [createConv] = useCreateConversationMutation();
   const { data: messagesData, isLoading: loadingMessages } = useGetMessagesQuery(conversationId, {
     skip: !conversationId
@@ -85,21 +88,32 @@ export default function ChatPage() {
 
   // Load or create conversation
   useEffect(() => {
-    if (!bookingId || !currentUser) return;
+    if (!bookingId || !currentUser || !booking) return;
 
     const initConversation = async () => {
       try {
         setError(null);
+        
+        const riderId = booking?.riderId?._id || booking?.riderId || booking?.rider?._id || booking?.rider;
+        if (!riderId) {
+          setError("No guide is assigned to this tour yet.");
+          return;
+        }
+
+        setRecipientInfo({
+          name: booking?.riderId?.name || booking?.rider?.name || "Your Guide"
+        });
+
         console.log("Creating conversation with:", {
           bookingId,
           touristId: currentUser.id,
-          riderId: "RIDER_ID_FROM_BOOKING"
+          riderId
         });
 
         const result = await createConv({
           bookingId,
           touristId: currentUser.id,
-          riderId: "RIDER_ID_FROM_BOOKING"
+          riderId
         }).unwrap();
 
         console.log("Conversation created:", result);
@@ -111,7 +125,7 @@ export default function ChatPage() {
     };
 
     initConversation();
-  }, [bookingId, currentUser, createConv]);
+  }, [bookingId, currentUser, booking, createConv]);
 
   // Load messages from API
   useEffect(() => {
@@ -256,9 +270,9 @@ export default function ChatPage() {
                   }`}
               >
                 <div
-                  className={`max-w-xs px-4 py-2.5 rounded-2xl text-sm break-words ${msg.senderId === currentUser.id
-                    ? "bg-[var(--primary)] text-white rounded-br-none"
-                    : "bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] rounded-bl-none"
+                  className={`max-w-xs px-4 py-2.5 rounded-2xl text-sm break-words shadow-sm ${msg.senderId === currentUser.id
+                    ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-br-none"
+                    : "bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 border border-zinc-100 dark:border-zinc-700 rounded-bl-none"
                     }`}
                 >
                   <p>{msg.message}</p>
