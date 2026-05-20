@@ -2,10 +2,17 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Navigation2, MapPin } from 'lucide-react';
 import { getTouristSocket } from '@/socket/socket';
 
+
+import "leaflet-routing-machine";
+import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
+
+
+
 export default function LiveTracker({ booking, height = '400px' }) {
-  const mapRef      = useRef(null);
+  const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const riderMarker = useRef(null);
+  const routingControlRef = useRef(null);
   const [elapsedKm, setElapsedKm] = useState(0);
 
   useEffect(() => {
@@ -42,11 +49,23 @@ export default function LiveTracker({ booking, height = '400px' }) {
       className: '', iconSize: [44, 44], iconAnchor: [22, 22],
     });
 
+    const initialLat = Number(booking.liveLocation?.lat || booking.rider?.lat || pick.lat);
+    const initialLng = Number(booking.liveLocation?.lng || booking.rider?.lng || pick.lng);
+
     // ── 3. Pickup Marker ───────────────────────────────────
     L.marker([pick.lat, pick.lng], { icon: pickupIcon }).bindPopup('<b>Pickup point</b>').addTo(map);
 
     // ── 4. Stop Markers & Route Path ───────────────────────
-    const pathPoints = [[pick.lat, pick.lng]];
+    const pathPoints = [];
+    const isOngoing = booking.bookingStatus === 'ongoing';
+
+    // Both statuses start routing from the Rider's current location
+    pathPoints.push([initialLat, initialLng]);
+
+    if (!isOngoing) {
+      // 1. Until the ride starts: only route from Rider to Pickup Point
+      pathPoints.push([pick.lat, pick.lng]);
+    }
 
     console.log("📍 PICKUP:", pick);
     console.log("📍 STOPS:", JSON.stringify(booking.stops, null, 2));
@@ -66,7 +85,11 @@ export default function LiveTracker({ booking, height = '400px' }) {
           L.marker([sLat, sLng], { icon: stopIcon })
             .bindPopup(`<b>Stop ${index + 1}: ${stop.name || ''}</b>`)
             .addTo(map);
-          pathPoints.push([sLat, sLng]);
+          
+          // 2. When the ride starts: Route to stops
+          if (isOngoing) {
+            pathPoints.push([sLat, sLng]);
+          }
         }
       });
     }
@@ -74,18 +97,45 @@ export default function LiveTracker({ booking, height = '400px' }) {
 
 
 
-  
 
-    // Draw dashed route line
+
     if (pathPoints.length > 1) {
-      L.polyline(pathPoints, {
-        color: '#F59000', weight: 4, opacity: 0.7, dashArray: '10, 6'
+
+      if (routingControlRef.current) {
+        map.removeControl(routingControlRef.current);
+      }
+
+      routingControlRef.current = L.Routing.control({
+
+        waypoints: pathPoints.map(
+          point => L.latLng(point[0], point[1])
+        ),
+
+        lineOptions: {
+          styles: [
+            {
+              color: '#F59000',
+              weight: 5,
+              opacity: 0.9
+            }
+          ]
+        },
+
+        routeWhileDragging: false,
+        draggableWaypoints: false,
+        addWaypoints: false,
+        fitSelectedRoutes: true,
+        show: false,
+
+        createMarker: () => null
+
       }).addTo(map);
     }
 
+
+
+
     // ── 5. Rider (Car) Marker ──────────────────────────────
-    const initialLat = Number(booking.liveLocation?.lat || booking.rider?.lat || pick.lat);
-    const initialLng = Number(booking.liveLocation?.lng || booking.rider?.lng || pick.lng);
     riderMarker.current = L.marker([initialLat, initialLng], { icon: carIcon }).addTo(map);
 
     // ── 6. Tourist Blue Dot ────────────────────────────────
