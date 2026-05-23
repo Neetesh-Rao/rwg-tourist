@@ -127,8 +127,8 @@ function StepBar({ current }) {
         <React.Fragment key={label}>
           <div className="flex flex-col items-center flex-shrink-0">
             <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-400 ${i + 1 < current ? 'bg-brand-500 text-white'
-                : i + 1 === current ? 'bg-brand-500 text-white ring-4 ring-brand-100 dark:ring-brand-900/40'
-                  : 'bg-surface-2 dark:bg-surface-3 text-ink-400 border border-[var(--border)]'
+              : i + 1 === current ? 'bg-brand-500 text-white ring-4 ring-brand-100 dark:ring-brand-900/40'
+                : 'bg-surface-2 dark:bg-surface-3 text-ink-400 border border-[var(--border)]'
               }`}>
               {i + 1 < current ? <Check className="w-4 h-4" /> : i + 1}
             </div>
@@ -169,7 +169,7 @@ function TripDetails() {
     if (!form.city || !form.date || !form.pickupAddress) return;
     dispatch(updateDraft(form));
     dispatch(fetchSlots({ city: form.city, date: form.date, startTime: form.startTime, endTime: form.endTime, genderPreference: form.genderPreference }));
-    dispatch(estimatePrice({ cityId: form.city, rideTypeId: form.rideType,  hoursBooked: selRT?.hours}));
+    dispatch(estimatePrice({ cityId: form.city, rideTypeId: form.rideType, hoursBooked: selRT?.hours }));
     dispatch(setStep(2));
   }
 
@@ -393,29 +393,29 @@ function AddStops() {
 
       <div className="flex justify-between pt-2">
         <Button variant="ghost" onClick={() => dispatch(setStep(1))} icon={<ChevronLeft className="w-4 h-4" />}>Back</Button>
-        <Button 
-          variant="primary" 
-          size="lg" 
+        <Button
+          variant="primary"
+          size="lg"
           onClick={() => {
             const pickup = { lat: draft.pickupLat, lng: draft.pickupLng };
             const { total, segments } = calculateRouteDistance(pickup, current);
             const selRT = RIDE_TYPES.find(r => r.id === draft.rideType);
-            
+
             console.log('--- DISTANCE DEBUG ---');
             console.log('Pickup:', pickup);
             console.log('Stops:', current.length);
             console.log('Calculated KM:', total);
             console.log('Segments:', segments);
 
-            dispatch(estimatePrice({ 
-              cityId: draft.city, 
-              rideTypeId: draft.rideType, 
+            dispatch(estimatePrice({
+              cityId: draft.city,
+              rideTypeId: draft.rideType,
               hoursBooked: selRT?.hours || 5,
               actualKm: total,
               segments: segments
             }));
             dispatch(setStep(3));
-          }} 
+          }}
           iconRight={<ChevronRight className="w-4 h-4" />}
         >
           Review booking
@@ -606,11 +606,11 @@ function ReviewPay() {
 
             <div className="h-px bg-[var(--border)] my-2" />
 
-            {[ 
+            {[
               ['Total distance (est.)', `${estimate.totalDistance} km`],
-              ['Base fare', formatINR(estimate.baseFare)], 
-              ['Distance charge', formatINR(estimate.distanceCharge)], 
-              ['Time charge', formatINR(estimate.timeCharge)], 
+              ['Base fare', formatINR(estimate.baseFare)],
+              ['Distance charge', formatINR(estimate.distanceCharge)],
+              ['Time charge', formatINR(estimate.timeCharge)],
               ['Guide fee', formatINR(estimate.guideFee)]
             ].map(([l, v]) => (
               <div key={l} className="flex justify-between text-sm items-center py-0.5">
@@ -675,7 +675,7 @@ export default function BookingPage() {
   const stepContent = [<TripDetails />, <AddStops />, <ReviewPay />];
   return (
     <PageWrapper>
-      
+
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
         <div className="mb-8">
           <div className="text-xs tracking-[0.3em] text-brand-500 uppercase font-semibold mb-2">New booking</div>
