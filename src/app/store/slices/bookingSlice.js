@@ -31,29 +31,15 @@ export const fetchSlots = createAsyncThunk(
 
 export const estimatePrice = createAsyncThunk(
   'booking/estimatePrice',
-  async (bookingData, { getState, rejectWithValue }) => {
-    try {
-      const token = getState().auth?.token || ls.get('tourist_auth_token');
-      const baseUrl = import.meta.env.VITE_BACKEND_URL;
-      
-      const response = await fetch(`${baseUrl}/tourist/booking/estimate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` })
-        },
-        body: JSON.stringify(bookingData)
-      });
-      
-      const data = await response.json();
-      if (!data.success) {
-        return rejectWithValue(data.message || 'Failed to estimate price');
-      }
-      
-      return data.data;
-    } catch (error) {
-      return rejectWithValue(error.message || 'Network error');
-    }
+  async (params) => {
+    await sleep(200);
+    const city = getCityById(params.cityId);
+    return calcEstimate({
+      city,
+      rideTypeId: params.rideTypeId,
+      hoursBooked: params.hoursBooked,
+      actualKm: params.actualKm
+    });
   }
 );
 

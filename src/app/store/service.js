@@ -15,6 +15,6 @@ export const api = createApi({
       return headers;
     }
   }),
-  tagTypes: ["Balance", "Booking", "Transaction", "Chat","Notification"],
+  tagTypes: ["Balance", "Booking", "Transaction", "Chat"],
   endpoints: () => ({})
 });

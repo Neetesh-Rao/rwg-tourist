@@ -512,9 +512,9 @@ export default function BookingsPage() {
           />
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
-            {filtered.map((b, idx) => (
+            {filtered.map((b) => (
               <BookingDetail 
-                key={b.id || b._id || idx} 
+                key={b.id} 
                 booking={b} 
                 onTrack={(trackBooking) => navigate('/tracking', { state: { booking: trackBooking } })} 
                 onClick={() => setSelectedBooking(b)} 
