@@ -124,7 +124,7 @@ export default function ProfilePage() {
               <div className="flex items-center justify-center gap-4 mt-4 text-sm">
                 <span>{user?.totalTrips || 0} trips</span>
                 <span className="w-1 h-1 rounded-full bg-ink-300" />
-                <span className="text-brand-500 font-semibold">₹{(user?.walletBalance || 0).toLocaleString('en-IN')}</span>
+                {/* <span className="text-brand-500 font-semibold">₹{(user?.walletBalance || 0).toLocaleString('en-IN')}</span> */}
               </div>
             </Card>
 
