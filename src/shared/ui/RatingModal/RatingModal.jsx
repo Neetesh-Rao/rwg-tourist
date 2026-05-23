@@ -30,6 +30,7 @@ export default function RatingModal() {
     const bookings = bookingsResponse.data;
     const unreviewed = bookings.find(b =>
       (b.bookingStatus === 'completed' || b.status === 'completed') &&
+      (b.payment?.status === 'paid' || b.paymentStatus === 'paid') &&
       (!b.review || b.review?.isReviewed === false)
     );
 

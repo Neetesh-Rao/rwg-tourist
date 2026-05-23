@@ -76,18 +76,18 @@ const PAYMENT_META = {
     helper: 'Use your debit or credit card securely through Razorpay.',
     cta: 'Pay with Card',
   },
-  wallet: {
-    Icon: Wallet,
-    title: 'RwG Balance',
-    helper: 'The advance amount will be deducted directly from your balance.',
-    cta: 'Pay with Balance',
-  },
-  netbank: {
-    Icon: Landmark,
-    title: 'Razorpay Net Banking',
-    helper: 'Continue to Razorpay and select your bank to finish payment.',
-    cta: 'Pay with Net Banking',
-  },
+  // wallet: {
+  //   Icon: Wallet,
+  //   title: 'RwG Balance',
+  //   helper: 'The advance amount will be deducted directly from your balance.',
+  //   cta: 'Pay with Balance',
+  // },
+  // netbank: {
+  //   Icon: Landmark,
+  //   title: 'Razorpay Net Banking',
+  //   helper: 'Continue to Razorpay and select your bank to finish payment.',
+  //   cta: 'Pay with Net Banking',
+  // },
 };
 
 const loadRazorpayScript = () =>
@@ -144,6 +144,17 @@ function StepBar({ current }) {
   );
 }
 
+const calculateEndTime = (startTime, hours) => {
+  if (!startTime || !hours) return startTime;
+  const [hStr, mStr] = startTime.split(':');
+  const h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10);
+  const totalMinutes = h * 60 + m + hours * 60;
+  const endH = Math.floor(totalMinutes / 60) % 24;
+  const endM = totalMinutes % 60;
+  return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+};
+
 function TripDetails() {
   const dispatch = useAppDispatch();
   const draft = useDraft();
@@ -164,6 +175,16 @@ function TripDetails() {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const selRT = RIDE_TYPES.find(r => r.id === form.rideType);
+
+  useEffect(() => {
+    if (form.rideType !== 'custom' && form.startTime) {
+      const selRT = RIDE_TYPES.find(r => r.id === form.rideType);
+      if (selRT && selRT.hours) {
+        const calculatedEnd = calculateEndTime(form.startTime, selRT.hours);
+        setForm(f => ({ ...f, endTime: calculatedEnd }));
+      }
+    }
+  }, [form.rideType, form.startTime]);
 
   function handleNext() {
     if (!form.city || !form.date || !form.pickupAddress) return;
@@ -218,9 +239,11 @@ function TripDetails() {
           ))}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className={`grid ${form.rideType === 'custom' ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2'} gap-4`}>
         <Input label="Start time" type="time" leftIcon={<Clock className="w-4 h-4" />} value={form.startTime} onChange={e => set('startTime', e.target.value)} />
-        <Input label="End time" type="time" leftIcon={<Clock className="w-4 h-4" />} value={form.endTime} onChange={e => set('endTime', e.target.value)} />
+        {form.rideType === 'custom' && (
+          <Input label="End time" type="time" leftIcon={<Clock className="w-4 h-4" />} value={form.endTime} onChange={e => set('endTime', e.target.value)} />
+        )}
       </div>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
