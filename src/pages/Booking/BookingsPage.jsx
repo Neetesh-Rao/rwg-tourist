@@ -70,14 +70,23 @@ function BookingDetail({ booking, onTrack, onClick, onCancel }) {
 
         {booking.estimatedPrice && (
           <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between flex-wrap gap-2 mb-3">
-            <span className="text-xs text-ink-400">Est. DIstance: <span className="font-mono font-bold text-ink-800 dark:text-ink-200">{(booking.pricing.totalDistance)} KM</span></span>
-             <span className="text-xs text-ink-400">Est. Amount: <span className="font-mono font-bold text-ink-800 dark:text-ink-200">{formatINR(booking.pricing.totalAmount)}</span></span>
+            <span className="text-xs text-ink-400">
+              {booking.status === 'completed' ? 'Distance' : 'Est. Distance'}:{' '}
+              <span className="font-mono font-bold text-ink-800 dark:text-ink-200">{(booking.pricing.totalDistance)} KM</span>
+            </span>
+            <span className="text-xs text-ink-400">
+              {booking.status === 'completed' ? 'Total Amount' : 'Est. Amount'}:{' '}
+              <span className="font-mono font-bold text-ink-800 dark:text-ink-200">{formatINR(booking.pricing.totalAmount)}</span>
+            </span>
             <button 
               onClick={(e) => { e.stopPropagation(); setShowPricingDetails(true); }}
-              className="text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors"
+              className={booking.status === 'completed'
+                ? "text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
+                : "text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors"
+              }
               title="View pricing breakdown"
             >
-              <Info className="w-4 h-4" />
+              {booking.status === 'completed' ? <Check className="w-4 h-4" /> : <Info className="w-4 h-4" />}
             </button>
           </div>
         )}
@@ -255,15 +264,6 @@ function VerticalStepper({ booking, onClose }) {
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <a 
-                    href={booking.rider?.phone ? `https://wa.me/${booking.rider.phone.replace(/\D/g, '').startsWith('91') ? booking.rider.phone.replace(/\D/g, '') : '91' + booking.rider.phone.replace(/\D/g, '')}` : '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/20 flex flex-shrink-0 items-center justify-center text-brand-600 dark:text-brand-400 hover:text-brand-700 transition-colors border border-brand-200 dark:border-brand-800/40 shadow-sm" 
-                    title="Message Guide"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                  </a>
                   <a 
                     href={`tel:${booking.rider?.phone?.replace(/[^\d+]/g, '') || ''}`}
                     className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 flex flex-shrink-0 items-center justify-center text-green-600 dark:text-green-400 hover:text-green-700 transition-colors border border-green-200 dark:border-green-800/40 shadow-sm" 
