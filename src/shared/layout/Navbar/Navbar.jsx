@@ -6,6 +6,7 @@ import { logout } from '@/app/store/slices/authSlice';
 import { toggleTheme } from '@/app/store/slices/uiSlice';
 import Avatar from '@/shared/ui/Avatar/Avatar';
 import Button from '@/shared/ui/Button/Button';
+import { NotificationBell, NotificationPanel } from '@/shared/ui/Notification/NotificationUI';
 import logo from '@/shared/assets/logo.png';
 
 const LINKS = [
@@ -25,6 +26,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menu, setMenu] = useState(false);
   const [drop, setDrop] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   useEffect(() => { const fn = () => setScrolled(window.scrollY > 16); window.addEventListener('scroll', fn, { passive: true }); return () => window.removeEventListener('scroll', fn); }, []);
   useEffect(() => setMenu(false), [location.pathname]);
@@ -60,10 +62,10 @@ export default function Navbar() {
 
               {isAuthenticated ? (
                 <>
-                  <button className="relative w-9 h-9 rounded-xl flex items-center justify-center text-ink-500 dark:text-ink-400 hover:bg-surface-2 dark:hover:bg-surface-3 transition-all">
-                    <Bell className="w-4.5 h-4.5" />
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-500 rounded-full border-2 border-[var(--bg)] animate-pulse-brand" />
-                  </button>
+                  <div className="relative hidden md:block">
+                    <NotificationBell onClick={() => setNotifOpen(!notifOpen)} />
+                    {notifOpen && <NotificationPanel onClose={() => setNotifOpen(false)} />}
+                  </div>
                   <div className="relative hidden md:block">
                     <button onClick={() => setDrop(!drop)} className="flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-surface-2 dark:hover:bg-surface-3 transition-all">
                       <Avatar name={user?.name} src={user?.profileImage || user?.avatar} size="sm" />

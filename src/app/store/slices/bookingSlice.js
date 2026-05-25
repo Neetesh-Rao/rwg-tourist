@@ -2,10 +2,9 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
   ls,
   sleep,
-  calcEstimate,
   genId
 } from '@/shared/lib/helpers';
-import { getCityById } from '@/shared/config/constants';
+import { api } from '../service';
 
 export const fetchSlots = createAsyncThunk(
   'booking/fetchSlots',
@@ -31,15 +30,14 @@ export const fetchSlots = createAsyncThunk(
 
 export const estimatePrice = createAsyncThunk(
   'booking/estimatePrice',
-  async (params) => {
-    await sleep(200);
-    const city = getCityById(params.cityId);
-    return calcEstimate({
-      city,
-      rideTypeId: params.rideTypeId,
-      hoursBooked: params.hoursBooked,
-      actualKm: params.actualKm
-    });
+  async (params, { dispatch }) => {
+    const result = await dispatch(
+      api.endpoints.getEstimate.initiate(params)
+    );
+    if (result?.data?.success) {
+      return result.data.data;
+    }
+    throw new Error(result?.error?.data?.message || 'Estimate failed');
   }
 );
 
