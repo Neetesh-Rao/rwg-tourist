@@ -60,6 +60,8 @@ function ConfigLoader({ children }) {
   return children;
 }
 
+import ToastContainer from '@/shared/components/ui/ToastContainer/ToastContainer';
+
 function AppRoutes() {
   return (
     <>     <Toaster
@@ -83,6 +85,7 @@ function AppRoutes() {
       </Routes>
       <SocketManager />
       <RatingModal />
+      <ToastContainer />
     </>
   );
 }

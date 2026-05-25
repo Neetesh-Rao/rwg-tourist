@@ -2,6 +2,14 @@ import { api } from "../service";
 
 export const bookingApi = api.injectEndpoints({
   endpoints: (builder) => ({
+    getEstimate: builder.mutation({
+      query: (data) => ({
+        url: "/tourist/booking/estimate",
+        method: "POST",
+        body: data
+      })
+    }),
+
     createBooking: builder.mutation({
       query: (data) => ({
         url: "/tourist/booking",
@@ -37,6 +45,7 @@ export const bookingApi = api.injectEndpoints({
 });
 
 export const {
+  useGetEstimateMutation,
   useCreateBookingMutation,
   useGetBookingsQuery,
   useCancelBookingMutation,
