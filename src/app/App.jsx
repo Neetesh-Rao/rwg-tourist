@@ -61,8 +61,10 @@ function ConfigLoader({ children }) {
 }
 
 import ToastContainer from '@/shared/components/ui/ToastContainer/ToastContainer';
+import SupportWidget from '@/shared/components/ui/SupportWidget/SupportWidget';
 
 function AppRoutes() {
+  const { isAuthenticated } = useAuth();
   return (
     <>     <Toaster
       position="bottom-right"
@@ -86,6 +88,7 @@ function AppRoutes() {
       <SocketManager />
       <RatingModal />
       <ToastContainer />
+      {isAuthenticated && <SupportWidget />}
     </>
   );
 }
