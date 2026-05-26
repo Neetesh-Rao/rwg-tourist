@@ -45,18 +45,31 @@ export default function LiveTracker({ booking, height = '400px' }) {
     // ── 3. Pickup Marker ───────────────────────────────────
     L.marker([pick.lat, pick.lng], { icon: pickupIcon }).bindPopup('<b>Pickup point</b>').addTo(map);
 
-    // ── 4. Stop Markers & Route Path ───────────────────────
-    const pathPoints = [[pick.lat, pick.lng]];
+    // ── 4. Determine Route Starting Point ──────────────────
+    const initialLat = Number(booking.liveLocation?.lat || booking.rider?.lat || pick.lat);
+    const initialLng = Number(booking.liveLocation?.lng || booking.rider?.lng || pick.lng);
+    const isOngoing = booking.status === 'ongoing' || booking.bookingStatus === 'ongoing';
+
+    const pathPoints = [];
+    
+    if (!isOngoing) {
+      // Guide is arriving at pickup
+      if (booking.liveLocation?.lat || booking.rider?.lat) {
+        pathPoints.push([initialLat, initialLng]);
+      }
+      pathPoints.push([pick.lat, pick.lng]);
+    } else {
+      // Guide is on the tour, route from guide's current location
+      pathPoints.push([initialLat, initialLng]);
+    }
 
     console.log("📍 PICKUP:", pick);
-    console.log("📍 STOPS:", JSON.stringify(booking.stops, null, 2));
+    console.log("📍 RIDER POS:", { initialLat, initialLng });
 
     if (booking.stops && booking.stops.length > 0) {
       booking.stops.forEach((stop, index) => {
         const sLat = Number(stop.location?.lat || stop.lat);
         const sLng = Number(stop.location?.lng || stop.lng);
-
-        console.log(`   Stop ${index + 1}: lat=${sLat}, lng=${sLng}, name=${stop.name}`);
 
         if (!isNaN(sLat) && !isNaN(sLng) && sLat !== 0 && sLng !== 0) {
           const stopIcon = L.divIcon({
@@ -66,7 +79,11 @@ export default function LiveTracker({ booking, height = '400px' }) {
           L.marker([sLat, sLng], { icon: stopIcon })
             .bindPopup(`<b>Stop ${index + 1}: ${stop.name || ''}</b>`)
             .addTo(map);
-          pathPoints.push([sLat, sLng]);
+            
+          // Only add stops to the actual route path if the ride has started
+          if (isOngoing) {
+            pathPoints.push([sLat, sLng]);
+          }
         }
       });
     }
@@ -76,16 +93,33 @@ export default function LiveTracker({ booking, height = '400px' }) {
 
   
 
-    // Draw dashed route line
+    // Draw real road route line using OSRM
     if (pathPoints.length > 1) {
-      L.polyline(pathPoints, {
-        color: '#F59000', weight: 4, opacity: 0.7, dashArray: '10, 6'
-      }).addTo(map);
+      const coordinatesString = pathPoints.map(p => `${p[1]},${p[0]}`).join(';');
+      fetch(`https://router.project-osrm.org/route/v1/driving/${coordinatesString}?overview=full&geometries=geojson`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.routes && data.routes[0] && mapInstance.current) {
+            const routeCoords = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+            L.polyline(routeCoords, {
+              color: '#F59000', weight: 5, opacity: 0.9
+            }).addTo(mapInstance.current);
+          } else {
+            // Fallback to straight dashed line if route fails
+            if (mapInstance.current) {
+              L.polyline(pathPoints, { color: '#F59000', weight: 4, opacity: 0.7, dashArray: '10, 6' }).addTo(mapInstance.current);
+            }
+          }
+        })
+        .catch(err => {
+          console.error("OSRM Error:", err);
+          if (mapInstance.current) {
+            L.polyline(pathPoints, { color: '#F59000', weight: 4, opacity: 0.7, dashArray: '10, 6' }).addTo(mapInstance.current);
+          }
+        });
     }
 
     // ── 5. Rider (Car) Marker ──────────────────────────────
-    const initialLat = Number(booking.liveLocation?.lat || booking.rider?.lat || pick.lat);
-    const initialLng = Number(booking.liveLocation?.lng || booking.rider?.lng || pick.lng);
     riderMarker.current = L.marker([initialLat, initialLng], { icon: carIcon }).addTo(map);
 
     // ── 6. Tourist Blue Dot ────────────────────────────────

@@ -35,7 +35,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${scrolled ? 'bg-[var(--surface)]/90 backdrop-blur-2xl border-b border-[var(--border)] shadow-card' : 'bg-transparent'}`}>
+      <header className={`fixed top-0 left-0 right-0 z-[9999] transition-all duration-300 ${scrolled ? 'bg-[var(--surface)]/90 backdrop-blur-2xl border-b border-[var(--border)] shadow-card' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="h-16 flex items-center justify-between gap-4">
             {/* Logo */}
