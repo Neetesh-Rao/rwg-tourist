@@ -18,7 +18,12 @@ const baseQuery = fetchBaseQuery({
 const baseQueryWithReauth = async (args, apiInstance, extraOptions) => {
   let result = await baseQuery(args, apiInstance, extraOptions);
   if (result.error && result.error.status === 401) {
-    apiInstance.dispatch(logout());
+    const isLoginPage = window.location.pathname === '/login';
+    const url = typeof args === 'string' ? args : args?.url || '';
+    const isLoginRequest = url.includes('/auth/');
+    if (!isLoginPage && !isLoginRequest) {
+      apiInstance.dispatch(logout());
+    }
   }
   return result;
 };
@@ -26,6 +31,6 @@ const baseQueryWithReauth = async (args, apiInstance, extraOptions) => {
 export const api = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Balance", "Booking", "Transaction", "Chat"],
+  tagTypes: ["Balance", "Booking", "Transaction", "Chat", "SupportQuery"],
   endpoints: () => ({})
 });
