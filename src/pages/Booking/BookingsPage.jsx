@@ -418,16 +418,23 @@ export default function BookingsPage() {
   });
   const [filter, setFilter] = useState('all');
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [cancelId, setCancelId] = useState(null);
   const [cancelBooking] = useCancelBookingMutation();
   const [success, setSuccess] = useState(location.search.includes('success=true'));
 
-  const handleCancel = async (id) => {
-    if (!window.confirm('Are you sure you want to cancel this ride?')) return;
+  const handleCancel = (id) => {
+    setCancelId(id);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelId) return;
     try {
-      await cancelBooking(id).unwrap();
+      await cancelBooking(cancelId).unwrap();
       dispatch(pushToast({ type: 'success', title: 'Booking Cancelled', message: 'Your ride has been successfully cancelled.' }));
     } catch (err) {
       dispatch(pushToast({ type: 'error', title: 'Cancellation Failed', message: err?.data?.message || 'Could not cancel booking.' }));
+    } finally {
+      setCancelId(null);
     }
   };
 
@@ -533,6 +540,21 @@ export default function BookingsPage() {
         {selectedBooking && (
           <VerticalStepper booking={selectedBooking} onClose={() => setSelectedBooking(null)} />
         )}
+      </Modal>
+      <Modal
+        open={!!cancelId}
+        onClose={() => setCancelId(null)}
+        title="Cancel Ride"
+      >
+        <div className="space-y-4">
+          <p className="text-ink-600 dark:text-ink-400 text-sm">
+            Are you sure you want to cancel this ride? This action cannot be undone.
+          </p>
+          <div className="flex items-center gap-3 justify-end pt-4">
+            <Button variant="secondary" onClick={() => setCancelId(null)}>Keep Ride</Button>
+            <Button variant="primary" className="!bg-red-500 hover:!bg-red-600 !border-red-500 !text-white" onClick={handleConfirmCancel}>Yes, Cancel</Button>
+          </div>
+        </div>
       </Modal>
     </PageWrapper>
   );

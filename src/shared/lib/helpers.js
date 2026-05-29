@@ -23,6 +23,11 @@ export const formatINR=n=>new Intl.NumberFormat('en-IN',{style:'currency',curren
 export const formatDate=(s,opts={})=>{if(!s)return '';try{return new Date(s).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',...opts});}catch{return s;}};
 export const formatTime=s=>{if(!s)return '';try{const[h,m]=s.split(':');const hr=parseInt(h,10);return `${hr>12?hr-12:hr||12}:${m} ${hr>=12?'PM':'AM'}`;}catch{return s;}};
 export const getTomorrow=()=>{const d=new Date();d.setDate(d.getDate()+1);return d.toISOString().split('T')[0];};
+export const getToday=()=>{
+  const d = new Date();
+  const offset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - offset).toISOString().split('T')[0];
+};
 
 export const isValidPhone=v=>/^[6-9]\d{9}$/.test(v);
 
