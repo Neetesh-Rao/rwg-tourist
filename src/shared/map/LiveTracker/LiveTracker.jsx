@@ -2,6 +2,25 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Navigation2, MapPin } from 'lucide-react';
 import { getTouristSocket } from '@/socket/socket';
 
+// Smooth marker slide using requestAnimationFrame
+function slideMarkerTo(marker, targetLatLng, duration = 1500) {
+  if (!marker) return;
+  const start = marker.getLatLng();
+  const startTime = performance.now();
+  const dlat = targetLatLng[0] - start.lat;
+  const dlng = targetLatLng[1] - start.lng;
+
+  function step(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    // ease-out cubic
+    const ease = 1 - Math.pow(1 - t, 3);
+    marker.setLatLng([start.lat + dlat * ease, start.lng + dlng * ease]);
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
 export default function LiveTracker({ booking, height = '400px' }) {
   const mapRef      = useRef(null);
   const mapInstance = useRef(null);
@@ -156,9 +175,10 @@ export default function LiveTracker({ booking, height = '400px' }) {
       socket.emit("join-ride", bId);
 
       socket.on("ride-location-updated", (data) => {
+        console.log('📡 [TOURIST] Received location update from rider:', data);
         if (!data.lat || !data.lng) return;
         if (riderMarker.current) {
-          riderMarker.current.setLatLng([data.lat, data.lng]);
+          slideMarkerTo(riderMarker.current, [data.lat, data.lng], 2000);
 
           // Auto-zoom to fit both
           if (mapInstance.current && tMarker) {
@@ -189,7 +209,7 @@ export default function LiveTracker({ booking, height = '400px' }) {
       }
       riderMarker.current = null;
     };
-  }, [booking]);
+  }, [booking?.id, booking?._id, booking?.status, booking?.bookingStatus]);
 
   if (!booking) return null;
 

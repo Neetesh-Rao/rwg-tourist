@@ -24,7 +24,7 @@ import StarRating from '@/shared/ui/StarRating/StarRating';
 import { Skeleton } from '@/shared/ui/Loader/Loader';
 import MapPicker from '@/shared/map/MapPicker/MapPicker';
 import { CITIES, RIDE_TYPES, CITY_STOPS, LANGUAGES, PAYMENT_METHODS } from '@/shared/config/constants';
-import { formatINR, getTomorrow, calculateRouteDistance } from '@/shared/lib/helpers';
+import { formatINR, getToday, getTomorrow, calculateRouteDistance } from '@/shared/lib/helpers';
 
 const VEHICLE_TYPES = [
   { id: 'bike', label: 'Bike', emoji: '🏍️', desc: 'Fast & agile' },
@@ -204,7 +204,7 @@ function TripDetails() {
           onChange={e => { set('city', e.target.value); setShowMap(false); }}
         />
         <Input
-          label="Date" type="date" required min={getTomorrow()}
+          label="Date" type="date" required min={getToday()}
           leftIcon={<Clock className="w-4 h-4" />}
           value={form.date} onChange={e => set('date', e.target.value)}
         />
@@ -240,9 +240,9 @@ function TripDetails() {
         </div>
       </div>
       <div className={`grid ${form.rideType === 'custom' ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2'} gap-4`}>
-        <Input label="Start time" type="time" leftIcon={<Clock className="w-4 h-4" />} value={form.startTime} onChange={e => set('startTime', e.target.value)} />
+        <Input label="Start time" type="time" leftIcon={<Clock className="w-4 h-4" />} value={form.startTime} onChange={e => { set('startTime', e.target.value); e.target.blur(); }} />
         {form.rideType === 'custom' && (
-          <Input label="End time" type="time" leftIcon={<Clock className="w-4 h-4" />} value={form.endTime} onChange={e => set('endTime', e.target.value)} />
+          <Input label="End time" type="time" leftIcon={<Clock className="w-4 h-4" />} value={form.endTime} onChange={e => { set('endTime', e.target.value); e.target.blur(); }} />
         )}
       </div>
       <div className="space-y-3">
