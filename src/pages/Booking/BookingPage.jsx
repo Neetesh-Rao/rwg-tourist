@@ -76,18 +76,18 @@ const PAYMENT_META = {
     helper: 'Use your debit or credit card securely through Razorpay.',
     cta: 'Pay with Card',
   },
-  // wallet: {
-  //   Icon: Wallet,
-  //   title: 'RwG Balance',
-  //   helper: 'The advance amount will be deducted directly from your balance.',
-  //   cta: 'Pay with Balance',
-  // },
-  // netbank: {
-  //   Icon: Landmark,
-  //   title: 'Razorpay Net Banking',
-  //   helper: 'Continue to Razorpay and select your bank to finish payment.',
-  //   cta: 'Pay with Net Banking',
-  // },
+  wallet: {
+    Icon: Wallet,
+    title: 'RwG Balance',
+    helper: 'The advance amount will be deducted directly from your balance.',
+    cta: 'Pay with Balance',
+  },
+  netbank: {
+    Icon: Landmark,
+    title: 'Razorpay Net Banking',
+    helper: 'Continue to Razorpay and select your bank to finish payment.',
+    cta: 'Pay with Net Banking',
+  },
 };
 
 const loadRazorpayScript = () =>
@@ -188,39 +188,9 @@ function TripDetails() {
 
   function handleNext() {
     if (!form.city || !form.date || !form.pickupAddress) return;
-    
-    let hoursBooked = selRT?.hours;
-    if (form.rideType === 'custom') {
-      const [sh, sm] = form.startTime.split(':').map(Number);
-      const [eh, em] = form.endTime.split(':').map(Number);
-      let diff = (eh + (em || 0)/60) - (sh + (sm || 0)/60);
-      if (diff < 0) diff += 24;
-      hoursBooked = Math.max(1, Math.round(diff));
-    }
-
-    dispatch(updateDraft({ ...form, totalHours: hoursBooked }));
+    dispatch(updateDraft(form));
     dispatch(fetchSlots({ city: form.city, date: form.date, startTime: form.startTime, endTime: form.endTime, genderPreference: form.genderPreference }));
-    dispatch(estimatePrice({
-      cityId: form.city,
-      rideTypeId: form.rideType,
-      hoursBooked,
-      startTime: form.startTime,
-      endTime: form.endTime,
-      durationType: form.rideType,
-      totalHours: form.totalHours || hoursBooked,
-      pickupLocation: {
-        address: form.pickupAddress,
-        lat: form.pickupLat,
-        lng: form.pickupLng,
-      },
-      // Use stops from the draft (global state) which contains added stops
-      stops: (draft.stops || []).map(stop => ({
-        name: stop.name,
-        location: stop.location,
-        duration: stop.duration || stop.estimatedDuration,
-        type: stop.category || stop.type || 'Custom',
-      })),
-    }));
+    dispatch(estimatePrice({ cityId: form.city, rideTypeId: form.rideType, hoursBooked: selRT?.hours }));
     dispatch(setStep(2));
   }
 
@@ -544,9 +514,7 @@ function ReviewPay() {
       city: CITIES.find((city) => city.id === draft.city)?.name || draft.city,
       date: draft.date,
       startTime: formatBookingTime(draft.startTime),
-      endTime: draft.endTime ? formatBookingTime(draft.endTime) : undefined,
       durationType: mapDurationType(draft.rideType),
-      totalHours: draft.totalHours,
       pickupLocation: {
         address: draft.pickupAddress,
         lat: draft.pickupLat,

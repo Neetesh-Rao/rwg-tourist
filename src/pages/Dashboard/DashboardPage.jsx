@@ -85,7 +85,9 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-ink-400 font-medium">{greeting} 👋</p>
               <h1 className="font-display text-3xl font-bold text-ink-900 dark:text-ink-100">{user?.name?.split(' ')[0]}</h1>
-
+              {/* <p className="text-xs text-ink-400 mt-0.5">
+                Balance: <span className="font-mono font-semibold text-brand-500">{formatINR(user?.walletBalance || 0)}</span>
+              </p> */}
             </div>
           </div>
           <Button variant="primary" size="lg" onClick={() => navigate('/book')} icon={<Compass className="w-4 h-4" />}>
