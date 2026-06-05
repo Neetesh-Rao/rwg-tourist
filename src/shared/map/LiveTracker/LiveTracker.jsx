@@ -49,13 +49,13 @@ export default function LiveTracker({ booking, height = '400px' }) {
     }
   }
 
-  // ── Helper: draw route rider → pickup via OSRM ───────────────────────
-  async function drawRiderToPickup(map, rLat, rLng, pLat, pLng) {
+  // ── Helper: draw route rider → target destination via OSRM ───────────
+  async function drawRiderToDestination(map, rLat, rLng, tLat, tLng) {
     if (!map) return;
     clearRoute(map);
 
     const L      = window.L;
-    const coords = await fetchOSRMRoute(rLat, rLng, pLat, pLng);
+    const coords = await fetchOSRMRoute(rLat, rLng, tLat, tLng);
 
     if (!mapInstance.current) return; // unmounted while fetching
 
@@ -65,7 +65,7 @@ export default function LiveTracker({ booking, height = '400px' }) {
       }).addTo(map);
     } else {
       // Fallback — dashed straight line
-      routeLine.current = L.polyline([[rLat, rLng], [pLat, pLng]], {
+      routeLine.current = L.polyline([[rLat, rLng], [tLat, tLng]], {
         color: '#F59000', weight: 4, opacity: 0.7, dashArray: '10, 6',
       }).addTo(map);
     }
@@ -142,10 +142,27 @@ export default function LiveTracker({ booking, height = '400px' }) {
     const initialRiderLat = Number(booking.liveLocation?.lat || booking.rider?.lat || pick.lat);
     const initialRiderLng = Number(booking.liveLocation?.lng || booking.rider?.lng || pick.lng);
 
+    // Determine the next destination (pickup or next stop)
+    const getNextDestination = () => {
+      const stage = booking.tracking?.currentStage || 'assigned';
+      if (stage === 'started') {
+        const stops = booking.stops || [];
+        const completed = booking.tracking?.completedStops || [];
+        const nextIdx = completed.length;
+        if (nextIdx < stops.length) {
+          const s = stops[nextIdx];
+          return { lat: Number(s.location?.lat || s.lat), lng: Number(s.location?.lng || s.lng) };
+        }
+      }
+      return { lat: pick.lat, lng: pick.lng };
+    };
+
+    const nextDest = getNextDestination();
+
     if (hasStarted || hasRiderPos) {
       riderMarker.current = L.marker([initialRiderLat, initialRiderLng], { icon: carIcon }).addTo(map);
-      // Draw initial route: rider → pickup
-      drawRiderToPickup(map, initialRiderLat, initialRiderLng, pick.lat, pick.lng);
+      // Draw initial route: rider → next destination
+      drawRiderToDestination(map, initialRiderLat, initialRiderLng, nextDest.lat, nextDest.lng);
     } else {
       // Rider not moving yet — just show pickup area
       map.setView([pick.lat, pick.lng], 14);
@@ -201,11 +218,11 @@ export default function LiveTracker({ booking, height = '400px' }) {
           const curr    = L.latLng(data.lat, data.lng);
           const distM   = prev.distanceTo(curr);
           if (distM > 30) {
-            await drawRiderToPickup(mapInstance.current, data.lat, data.lng, pick.lat, pick.lng);
+            await drawRiderToDestination(mapInstance.current, data.lat, data.lng, nextDest.lat, nextDest.lng);
           }
         } else {
           // First update — always draw
-          await drawRiderToPickup(mapInstance.current, data.lat, data.lng, pick.lat, pick.lng);
+          await drawRiderToDestination(mapInstance.current, data.lat, data.lng, nextDest.lat, nextDest.lng);
         }
       });
     }
@@ -225,7 +242,7 @@ export default function LiveTracker({ booking, height = '400px' }) {
       routeLine.current    = null;
       lastRiderPos.current = null;
     };
-  }, [booking?.id, booking?._id, booking?.tracking?.currentStage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [booking?.id, booking?._id, booking?.tracking?.currentStage, booking?.tracking?.completedStops?.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!booking) return null;
 
