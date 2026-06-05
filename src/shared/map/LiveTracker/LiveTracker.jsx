@@ -2,44 +2,97 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Navigation2, MapPin } from 'lucide-react';
 import { getTouristSocket } from '@/socket/socket';
 
-// Smooth marker slide using requestAnimationFrame
+// Smooth marker animation using requestAnimationFrame
 function slideMarkerTo(marker, targetLatLng, duration = 1500) {
   if (!marker) return;
-  const start = marker.getLatLng();
+  const start     = marker.getLatLng();
   const startTime = performance.now();
-  const dlat = targetLatLng[0] - start.lat;
-  const dlng = targetLatLng[1] - start.lng;
+  const dlat      = targetLatLng[0] - start.lat;
+  const dlng      = targetLatLng[1] - start.lng;
 
   function step(now) {
     const elapsed = now - startTime;
-    const t = Math.min(elapsed / duration, 1);
-    // ease-out cubic
-    const ease = 1 - Math.pow(1 - t, 3);
+    const t       = Math.min(elapsed / duration, 1);
+    const ease    = 1 - Math.pow(1 - t, 3); // ease-out cubic
     marker.setLatLng([start.lat + dlat * ease, start.lng + dlng * ease]);
     if (t < 1) requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
 }
 
+// Fetch OSRM road route and return decoded coords
+async function fetchOSRMRoute(fromLat, fromLng, toLat, toLng) {
+  const url = `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`;
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.routes?.[0]) {
+      return data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+    }
+  } catch (_) { /* fall through */ }
+  return null; // caller handles fallback
+}
+
 export default function LiveTracker({ booking, height = '400px' }) {
-  const mapRef      = useRef(null);
-  const mapInstance = useRef(null);
-  const riderMarker = useRef(null);
+  const mapRef        = useRef(null);
+  const mapInstance   = useRef(null);
+  const riderMarker   = useRef(null);
+  const routeLine     = useRef(null);          // current orange polyline
+  const lastRiderPos  = useRef(null);          // {lat,lng} of last OSRM request
   const [elapsedKm, setElapsedKm] = useState(0);
 
+  // ── Helper: remove existing orange line ──────────────────────────────
+  function clearRoute(map) {
+    if (routeLine.current && map) {
+      map.removeLayer(routeLine.current);
+      routeLine.current = null;
+    }
+  }
+
+  // ── Helper: draw route rider → pickup via OSRM ───────────────────────
+  async function drawRiderToPickup(map, rLat, rLng, pLat, pLng) {
+    if (!map) return;
+    clearRoute(map);
+
+    const L      = window.L;
+    const coords = await fetchOSRMRoute(rLat, rLng, pLat, pLng);
+
+    if (!mapInstance.current) return; // unmounted while fetching
+
+    if (coords) {
+      routeLine.current = L.polyline(coords, {
+        color: '#F59000', weight: 5, opacity: 0.9,
+      }).addTo(map);
+    } else {
+      // Fallback — dashed straight line
+      routeLine.current = L.polyline([[rLat, rLng], [pLat, pLng]], {
+        color: '#F59000', weight: 4, opacity: 0.7, dashArray: '10, 6',
+      }).addTo(map);
+    }
+
+    // Fit map to show full route
+    if (routeLine.current) {
+      map.fitBounds(routeLine.current.getBounds(), { padding: [50, 50], maxZoom: 16 });
+    }
+
+    lastRiderPos.current = { lat: rLat, lng: rLng };
+  }
+
+  // ── Main effect: initialise map & socket listeners ───────────────────
   useEffect(() => {
     if (!mapRef.current || !window.L || !booking || mapInstance.current) return;
 
     const L = window.L;
+
     const pick = {
       lat: Number(booking.pickupLat || booking.pickupLocation?.lat || 28.6139),
-      lng: Number(booking.pickupLng || booking.pickupLocation?.lng || 77.2090)
+      lng: Number(booking.pickupLng || booking.pickupLocation?.lng || 77.2090),
     };
 
-    // ── 1. Create Map ──────────────────────────────────────
+    // ── 1. Create Map ─────────────────────────────────────────────────
     const map = L.map(mapRef.current, {
       center: [pick.lat, pick.lng],
-      zoom: 12,
+      zoom: 13,
       zoomControl: false,
     });
     mapInstance.current = map;
@@ -50,7 +103,7 @@ export default function LiveTracker({ booking, height = '400px' }) {
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // ── 2. Icon Definitions ────────────────────────────────
+    // ── 2. Icon Definitions ───────────────────────────────────────────
     const pickupIcon = L.divIcon({
       html: `<div style="width:36px;height:36px;background:linear-gradient(135deg,#FFC15E,#E07200);border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 4px 16px rgba(245,144,0,0.5)"><svg viewBox="0 0 24 24" width="16" height="16" fill="#1A1918"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>`,
       className: '', iconSize: [36, 36], iconAnchor: [18, 36],
@@ -61,36 +114,16 @@ export default function LiveTracker({ booking, height = '400px' }) {
       className: '', iconSize: [44, 44], iconAnchor: [22, 22],
     });
 
-    // ── 3. Pickup Marker ───────────────────────────────────
-    L.marker([pick.lat, pick.lng], { icon: pickupIcon }).bindPopup('<b>Pickup point</b>').addTo(map);
+    // ── 3. Pickup marker ──────────────────────────────────────────────
+    L.marker([pick.lat, pick.lng], { icon: pickupIcon })
+      .bindPopup('<b>Your Pickup Point</b>')
+      .addTo(map);
 
-    // ── 4. Determine Route Starting Point ──────────────────
-    const initialLat = Number(booking.liveLocation?.lat || booking.rider?.lat || pick.lat);
-    const initialLng = Number(booking.liveLocation?.lng || booking.rider?.lng || pick.lng);
-    const isOngoing = booking.status === 'ongoing' || booking.bookingStatus === 'ongoing';
-    const hasStartedHeading = booking.tracking && booking.tracking.currentStage && booking.tracking.currentStage !== 'assigned';
-
-    const pathPoints = [];
-    
-    if (!isOngoing) {
-      // Guide is arriving at pickup
-      if (hasStartedHeading && (booking.liveLocation?.lat || booking.rider?.lat)) {
-        pathPoints.push([initialLat, initialLng]);
-      }
-      pathPoints.push([pick.lat, pick.lng]);
-    } else {
-      // Guide is on the tour, route from guide's current location
-      pathPoints.push([initialLat, initialLng]);
-    }
-
-    console.log("📍 PICKUP:", pick);
-    console.log("📍 RIDER POS:", { initialLat, initialLng });
-
-    if (booking.stops && booking.stops.length > 0) {
+    // ── 4. All stop markers (decorative only — not in route) ──────────
+    if (booking.stops?.length > 0) {
       booking.stops.forEach((stop, index) => {
         const sLat = Number(stop.location?.lat || stop.lat);
         const sLng = Number(stop.location?.lng || stop.lng);
-
         if (!isNaN(sLat) && !isNaN(sLng) && sLat !== 0 && sLng !== 0) {
           const stopIcon = L.divIcon({
             html: `<div style="width:32px;height:32px;background:#16A34A;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 4px 16px rgba(22,163,74,0.5)"><span style="color:white;font-weight:bold;font-size:12px">${index + 1}</span></div>`,
@@ -99,120 +132,100 @@ export default function LiveTracker({ booking, height = '400px' }) {
           L.marker([sLat, sLng], { icon: stopIcon })
             .bindPopup(`<b>Stop ${index + 1}: ${stop.name || ''}</b>`)
             .addTo(map);
-            
-          // Only add stops to the actual route path if the ride has started
-          if (isOngoing) {
-            pathPoints.push([sLat, sLng]);
-          }
         }
       });
     }
 
+    // ── 5. Rider initial position & first route draw ──────────────────
+    const hasRiderPos    = !!(booking.liveLocation?.lat || booking.rider?.lat);
+    const hasStarted     = booking.tracking?.currentStage && booking.tracking.currentStage !== 'assigned';
+    const initialRiderLat = Number(booking.liveLocation?.lat || booking.rider?.lat || pick.lat);
+    const initialRiderLng = Number(booking.liveLocation?.lng || booking.rider?.lng || pick.lng);
 
-
-
-  
-
-    // Draw real road route line using OSRM
-    if (pathPoints.length > 1) {
-      const coordinatesString = pathPoints.map(p => `${p[1]},${p[0]}`).join(';');
-      fetch(`https://router.project-osrm.org/route/v1/driving/${coordinatesString}?overview=full&geometries=geojson`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.routes && data.routes[0] && mapInstance.current) {
-            const routeCoords = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
-            L.polyline(routeCoords, {
-              color: '#F59000', weight: 5, opacity: 0.9
-            }).addTo(mapInstance.current);
-          } else {
-            // Fallback to straight dashed line if route fails
-            if (mapInstance.current) {
-              L.polyline(pathPoints, { color: '#F59000', weight: 4, opacity: 0.7, dashArray: '10, 6' }).addTo(mapInstance.current);
-            }
-          }
-        })
-        .catch(err => {
-          console.error("OSRM Error:", err);
-          if (mapInstance.current) {
-            L.polyline(pathPoints, { color: '#F59000', weight: 4, opacity: 0.7, dashArray: '10, 6' }).addTo(mapInstance.current);
-          }
-        });
+    if (hasStarted || hasRiderPos) {
+      riderMarker.current = L.marker([initialRiderLat, initialRiderLng], { icon: carIcon }).addTo(map);
+      // Draw initial route: rider → pickup
+      drawRiderToPickup(map, initialRiderLat, initialRiderLng, pick.lat, pick.lng);
+    } else {
+      // Rider not moving yet — just show pickup area
+      map.setView([pick.lat, pick.lng], 14);
     }
 
-    // ── 5. Rider (Car) Marker ──────────────────────────────
-    if (hasStartedHeading || isOngoing) {
-      riderMarker.current = L.marker([initialLat, initialLng], { icon: carIcon }).addTo(map);
-    }
-
-    // ── 6. Tourist Blue Dot ────────────────────────────────
-    const touristMarkerIcon = L.divIcon({
+    // ── 6. Tourist GPS blue dot ───────────────────────────────────────
+    const touristIcon = L.divIcon({
       html: `<div style="width:16px;height:16px;background:#3B82F6;border-radius:50%;border:2px solid white;box-shadow:0 0 10px rgba(59,130,246,0.5)"></div>`,
-      className: '', iconSize: [16, 16], iconAnchor: [8, 8]
+      className: '', iconSize: [16, 16], iconAnchor: [8, 8],
     });
-    const tMarker = L.marker([pick.lat, pick.lng], { icon: touristMarkerIcon }).addTo(map);
+    const tMarker = L.marker([pick.lat, pick.lng], { icon: touristIcon }).addTo(map);
 
-    // ── 7. Tourist GPS Watcher ─────────────────────────────
+    // ── 7. Tourist GPS watcher ────────────────────────────────────────
     const socket = getTouristSocket();
-    const bId = booking.id || booking._id;
+    const bId    = booking.id || booking._id;
     let touristWatcher = null;
 
     if (navigator.geolocation) {
-      touristWatcher = navigator.geolocation.watchPosition((pos) => {
-        const { latitude, longitude } = pos.coords;
-        tMarker.setLatLng([latitude, longitude]);
-
-        // Auto-zoom to fit both
-        if (mapInstance.current && riderMarker.current) {
-          const bounds = L.latLngBounds([latitude, longitude], riderMarker.current.getLatLng());
-          mapInstance.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
-        }
-
-        if (socket && bId) {
-          socket.emit("update-tourist-location", { bookingId: bId, lat: latitude, lng: longitude });
-        }
-      }, null, { enableHighAccuracy: true });
+      touristWatcher = navigator.geolocation.watchPosition(
+        pos => {
+          const { latitude, longitude } = pos.coords;
+          tMarker.setLatLng([latitude, longitude]);
+          if (socket && bId) {
+            socket.emit('update-tourist-location', { bookingId: bId, lat: latitude, lng: longitude });
+          }
+        },
+        null,
+        { enableHighAccuracy: true },
+      );
     }
 
-    // ── 8. Listen for Rider Location Updates ───────────────
+    // ── 8. Rider location updates via socket ──────────────────────────
     if (socket && bId) {
-      socket.emit("join-ride", bId);
+      socket.emit('join-ride', bId);
 
-      socket.on("ride-location-updated", (data) => {
-        console.log('📡 [TOURIST] Received location update from rider:', data);
+      socket.on('ride-location-updated', async (data) => {
         if (!data.lat || !data.lng) return;
+
+        // Smooth-slide rider marker
         if (riderMarker.current) {
           slideMarkerTo(riderMarker.current, [data.lat, data.lng], 2000);
+        } else if (mapInstance.current) {
+          riderMarker.current = L.marker([data.lat, data.lng], { icon: carIcon }).addTo(mapInstance.current);
+        }
 
-          // Auto-zoom to fit both
-          if (mapInstance.current && tMarker) {
-            const bounds = L.latLngBounds([data.lat, data.lng], tMarker.getLatLng());
-            mapInstance.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+        setElapsedKm(prev => prev + 0.01);
+
+        if (!mapInstance.current) return;
+
+        // Re-draw route only if rider moved >30 m
+        if (lastRiderPos.current) {
+          const prev    = L.latLng(lastRiderPos.current.lat, lastRiderPos.current.lng);
+          const curr    = L.latLng(data.lat, data.lng);
+          const distM   = prev.distanceTo(curr);
+          if (distM > 30) {
+            await drawRiderToPickup(mapInstance.current, data.lat, data.lng, pick.lat, pick.lng);
           }
-
-          setElapsedKm(prev => prev + 0.01);
+        } else {
+          // First update — always draw
+          await drawRiderToPickup(mapInstance.current, data.lat, data.lng, pick.lat, pick.lng);
         }
       });
     }
 
-    // ── 9. Initial Fit Bounds ──────────────────────────────
-    if (pathPoints.length > 1) {
-      map.fitBounds(pathPoints, { padding: [50, 50] });
-    }
-
-    // ── 10. Cleanup ────────────────────────────────────────
+    // ── 9. Cleanup ────────────────────────────────────────────────────
     return () => {
       if (touristWatcher) navigator.geolocation.clearWatch(touristWatcher);
       if (socket) {
-        socket.emit("leave-ride", bId);
-        socket.off("ride-location-updated");
+        socket.emit('leave-ride', bId);
+        socket.off('ride-location-updated');
       }
       if (mapInstance.current) {
         mapInstance.current.remove();
         mapInstance.current = null;
       }
-      riderMarker.current = null;
+      riderMarker.current  = null;
+      routeLine.current    = null;
+      lastRiderPos.current = null;
     };
-  }, [booking?.id, booking?._id, booking?.status, booking?.bookingStatus, booking?.tracking?.currentStage]);
+  }, [booking?.id, booking?._id, booking?.tracking?.currentStage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!booking) return null;
 
@@ -226,7 +239,9 @@ export default function LiveTracker({ booking, height = '400px' }) {
           </div>
           <div>
             <p className="text-xs text-ink-400 font-medium uppercase tracking-wider">Guide en route</p>
-            <p className="text-sm font-semibold text-ink-900 dark:text-ink-100">{booking.rider?.name || 'Your Guide'}</p>
+            <p className="text-sm font-semibold text-ink-900 dark:text-ink-100">
+              {booking.rider?.name || 'Your Guide'}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-4 text-sm">
@@ -250,7 +265,9 @@ export default function LiveTracker({ booking, height = '400px' }) {
       {/* Pickup address */}
       <div className="flex items-center gap-2 text-sm text-ink-600 dark:text-ink-400">
         <MapPin className="w-4 h-4 text-brand-500 flex-shrink-0" />
-        <span className="truncate">{booking.pickupAddress || booking.pickupLocation?.address}</span>
+        <span className="truncate">
+          {booking.pickupAddress || booking.pickupLocation?.address}
+        </span>
       </div>
     </div>
   );
