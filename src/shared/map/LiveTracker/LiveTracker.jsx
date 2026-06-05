@@ -68,12 +68,13 @@ export default function LiveTracker({ booking, height = '400px' }) {
     const initialLat = Number(booking.liveLocation?.lat || booking.rider?.lat || pick.lat);
     const initialLng = Number(booking.liveLocation?.lng || booking.rider?.lng || pick.lng);
     const isOngoing = booking.status === 'ongoing' || booking.bookingStatus === 'ongoing';
+    const hasStartedHeading = booking.tracking && booking.tracking.currentStage && booking.tracking.currentStage !== 'assigned';
 
     const pathPoints = [];
     
     if (!isOngoing) {
       // Guide is arriving at pickup
-      if (booking.liveLocation?.lat || booking.rider?.lat) {
+      if (hasStartedHeading && (booking.liveLocation?.lat || booking.rider?.lat)) {
         pathPoints.push([initialLat, initialLng]);
       }
       pathPoints.push([pick.lat, pick.lng]);
@@ -139,7 +140,9 @@ export default function LiveTracker({ booking, height = '400px' }) {
     }
 
     // ── 5. Rider (Car) Marker ──────────────────────────────
-    riderMarker.current = L.marker([initialLat, initialLng], { icon: carIcon }).addTo(map);
+    if (hasStartedHeading || isOngoing) {
+      riderMarker.current = L.marker([initialLat, initialLng], { icon: carIcon }).addTo(map);
+    }
 
     // ── 6. Tourist Blue Dot ────────────────────────────────
     const touristMarkerIcon = L.divIcon({
@@ -209,7 +212,7 @@ export default function LiveTracker({ booking, height = '400px' }) {
       }
       riderMarker.current = null;
     };
-  }, [booking?.id, booking?._id, booking?.status, booking?.bookingStatus]);
+  }, [booking?.id, booking?._id, booking?.status, booking?.bookingStatus, booking?.tracking?.currentStage]);
 
   if (!booking) return null;
 

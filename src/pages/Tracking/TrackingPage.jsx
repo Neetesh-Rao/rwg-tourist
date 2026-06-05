@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useGetBookingsQuery } from '@/app/store/slices/bookingApi';
 import PageWrapper from '@/shared/layout/PageWrapper/PageWrapper';
 import EmptyState from '@/shared/ui/EmptyState/EmptyState';
 import Button from '@/shared/ui/Button/Button';
@@ -7,8 +8,14 @@ import LiveTracker from '@/shared/map/LiveTracker/LiveTracker';
 
 export default function TrackingPage() {
   const loc = useLocation();
-  const booking = loc.state?.booking;
   const navigate = useNavigate();
+  
+  const { data: bookingsResponse } = useGetBookingsQuery();
+  const bookings = bookingsResponse?.data || bookingsResponse?.bookings || bookingsResponse || [];
+  const stateBooking = loc.state?.booking;
+  
+  const apiBooking = Array.isArray(bookings) ? bookings.find(b => b.id === stateBooking?.id || b._id === stateBooking?._id) : null;
+  const booking = apiBooking || stateBooking;
 
   if (!booking) {
     return (
