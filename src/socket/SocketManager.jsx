@@ -88,6 +88,11 @@ export default function SocketManager() {
         message: 'Hope you enjoyed your journey. Please rate your guide!'
       }));
     });
+
+    socket.on("ride-tracking-updated", (data) => {
+      console.log("RIDE TRACKING UPDATED:", data);
+      dispatch(api.util.invalidateTags(['Booking']));
+    });
     socket.on("notification", notificationHandler);
     socket.on("booking-cancelled", bookingCancelledHandler);
 
@@ -109,6 +114,7 @@ export default function SocketManager() {
       socket.off("rider-intrested", riderInterestedHandler);
       socket.off("notification", notificationHandler);
       socket.off("booking-cancelled", bookingCancelledHandler);
+      socket.off("ride-tracking-updated");
       window.removeEventListener('click', unlockAudio);
       window.removeEventListener('touchstart', unlockAudio);
     };
