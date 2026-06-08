@@ -190,7 +190,7 @@ function TripDetails() {
     if (!form.city || !form.date || !form.pickupAddress) return;
     dispatch(updateDraft(form));
     dispatch(fetchSlots({ city: form.city, date: form.date, startTime: form.startTime, endTime: form.endTime, genderPreference: form.genderPreference }));
-    dispatch(estimatePrice({ cityId: form.city, rideTypeId: form.rideType, hoursBooked: selRT?.hours }));
+    dispatch(estimatePrice({ cityId: form.city, rideTypeId: form.rideType, hoursBooked: selRT?.hours, vehicleType: form.vehicleType }));
     dispatch(setStep(2));
   }
 
@@ -435,7 +435,8 @@ function AddStops() {
               rideTypeId: draft.rideType,
               hoursBooked: selRT?.hours || 5,
               actualKm: total,
-              segments: segments
+              segments: segments,
+              vehicleType: draft.vehicleType
             }));
             dispatch(setStep(3));
           }}
