@@ -289,6 +289,8 @@ function AddStops() {
   const dispatch = useAppDispatch();
   const draft = useDraft();
   const [custom, setCustom] = useState('');
+  const [showStopMap, setShowStopMap] = useState(false);
+  const [pinnedStop, setPinnedStop] = useState(null); // { lat, lng, address }
 
   const cityStops = CITY_STOPS[draft.city] || [];
   const current = draft.stops || [];
@@ -320,6 +322,28 @@ function AddStops() {
   }
 
   function addCustom() {
+    // If we have a pinned map location, use it
+    if (pinnedStop?.lat && pinnedStop?.lng) {
+      const stopName = custom.trim() || pinnedStop.address || `Custom stop`;
+      dispatch(addStop({
+        id: Date.now().toString(),
+        name: stopName,
+        location: {
+          address: pinnedStop.address || stopName,
+          lat: pinnedStop.lat,
+          lng: pinnedStop.lng,
+        },
+        duration: 30,
+        type: 'Custom',
+        category: 'Custom',
+        isPinned: true,
+      }));
+      setCustom('');
+      setPinnedStop(null);
+      setShowStopMap(false);
+      return;
+    }
+
     if (!custom.trim()) return;
 
     // Search current city first, then all cities (case-insensitive)
@@ -341,6 +365,13 @@ function AddStops() {
       category: matchedStop?.category || 'Custom',
     }));
     setCustom('');
+  }
+
+  function handleMapPin(latlng, address) {
+    setPinnedStop({ lat: latlng.lat, lng: latlng.lng, address });
+    if (!custom.trim()) {
+      setCustom(address || '');
+    }
   }
 
   return (
@@ -371,25 +402,71 @@ function AddStops() {
         </div>
       ))}
 
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <Input
-            placeholder="Add a custom stop or landmark…"
-            value={custom}
-            onChange={e => setCustom(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addCustom()}
-            leftIcon={<MapPin className="w-4 h-4" />}
-            className="flex-1"
-            list="city-stop-suggestions"
-            hint={suggestedStops.length ? `${suggestedStops.length} suggestions found` : 'Type to see matching city stops'}
-          />
-          <datalist id="city-stop-suggestions">
-            {suggestedStops.map((stop) => (
-              <option key={stop.name} value={stop.name}>{stop.category}</option>
-            ))}
-          </datalist>
+      {/* Custom stop section with map picker */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-ink-400 uppercase tracking-wider font-semibold">Add custom stop</p>
+          {draft.city && (
+            <button
+              type="button"
+              onClick={() => { setShowStopMap(m => !m); if (showStopMap) setPinnedStop(null); }}
+              className="text-xs text-brand-500 hover:text-brand-600 font-semibold transition-colors flex items-center gap-1"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              {showStopMap ? 'Hide map' : 'Pin on map'}
+            </button>
+          )}
         </div>
-        <Button variant="secondary" onClick={addCustom} icon={<Plus className="w-4 h-4" />}>Add</Button>
+
+        {draft.city && showStopMap && (
+          <div className="animate-fade-in">
+            <MapPicker
+              city={draft.city}
+              value={pinnedStop ? { lat: pinnedStop.lat, lng: pinnedStop.lng } : null}
+              onChange={handleMapPin}
+              riders={[]}
+              height="260px"
+            />
+            {pinnedStop && (
+              <div className="flex items-center gap-2 mt-2 p-2.5 rounded-xl bg-green-50 dark:bg-green-900/15 border border-green-200 dark:border-green-800/40">
+                <MapPin className="w-3.5 h-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <p className="text-xs text-green-700 dark:text-green-400 font-medium truncate flex-1">
+                  📍 {pinnedStop.address}
+                </p>
+                <button onClick={() => setPinnedStop(null)} className="text-green-500 hover:text-red-500 transition-colors flex-shrink-0">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <Input
+              placeholder={showStopMap && pinnedStop ? "Name this stop (or use map address)…" : "Add a custom stop or landmark…"}
+              value={custom}
+              onChange={e => setCustom(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addCustom()}
+              leftIcon={<MapPin className="w-4 h-4" />}
+              className="flex-1"
+              list="city-stop-suggestions"
+              hint={
+                pinnedStop
+                  ? '📍 Map pin set — click Add to add this stop'
+                  : suggestedStops.length
+                    ? `${suggestedStops.length} suggestions found`
+                    : 'Type to see matching city stops or pin on map'
+              }
+            />
+            <datalist id="city-stop-suggestions">
+              {suggestedStops.map((stop) => (
+                <option key={stop.name} value={stop.name}>{stop.category}</option>
+              ))}
+            </datalist>
+          </div>
+          <Button variant={pinnedStop ? 'primary' : 'secondary'} onClick={addCustom} icon={<Plus className="w-4 h-4" />}>Add</Button>
+        </div>
       </div>
 
       {current.length > 0 && (
@@ -399,7 +476,20 @@ function AddStops() {
             <div key={stop.id} className="flex items-center gap-3 p-3 card !rounded-xl">
               <div className="w-6 h-6 rounded-full bg-brand-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{i + 1}</div>
               <div className="flex-1">
-                <p className="text-sm font-semibold text-ink-900 dark:text-ink-100">{stop.name}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-semibold text-ink-900 dark:text-ink-100">{stop.name}</p>
+                  {stop.isPinned && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-green-100 dark:bg-green-900/30 text-[10px] font-bold text-green-600 dark:text-green-400">
+                      <MapPin className="w-2.5 h-2.5" />
+                      map
+                    </span>
+                  )}
+                  {stop.category === 'Custom' && !stop.isPinned && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-ink-100 dark:bg-ink-800/40 text-[10px] font-bold text-ink-500">
+                      custom
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-ink-400">~{stop.duration || stop.estimatedDuration} min</p>
               </div>
               <button onClick={() => dispatch(removeStop(stop.id))} className="text-ink-300 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all">
