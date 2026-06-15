@@ -41,6 +41,13 @@ export const bookingApi = api.injectEndpoints({
       }),
       invalidatesTags: ["Booking"]
     }),
+    triggerSOS: builder.mutation({
+      query: ({ bookingId }) => ({
+        url: "/tourist/booking/sos",
+        method: "POST",
+        body: { bookingId }
+      })
+    }),
   })
 });
 
@@ -50,4 +57,5 @@ export const {
   useGetBookingsQuery,
   useCancelBookingMutation,
   useRateRiderMutation,
+  useTriggerSOSMutation,
 } = bookingApi;
