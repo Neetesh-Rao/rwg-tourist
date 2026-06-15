@@ -103,14 +103,16 @@ function BookingDetail({ booking, onTrack, onClick, onCancel }) {
             >
               Track Ride
             </Button>
-            <Button 
-              className="flex-1 !border-red-200 !text-red-500 hover:!bg-red-50 dark:!border-red-800/40 dark:!text-red-400 dark:hover:!bg-red-900/20 transition-colors" 
-              variant="secondary" 
-              size="sm" 
-              onClick={(e) => { e.stopPropagation(); onCancel(booking.id); }} 
-            >
-              Cancel Ride
-            </Button>
+            {!['ongoing', 'completed', 'cancelled'].includes(booking.status) && (
+              <Button 
+                className="flex-1 !border-red-200 !text-red-500 hover:!bg-red-50 dark:!border-red-800/40 dark:!text-red-400 dark:hover:!bg-red-900/20 transition-colors" 
+                variant="secondary" 
+                size="sm" 
+                onClick={(e) => { e.stopPropagation(); onCancel(booking.id); }} 
+              >
+                Cancel Ride
+              </Button>
+            )}
           </div>
         )}
       </Card>
@@ -419,17 +421,33 @@ export default function BookingsPage() {
   const [filter, setFilter] = useState('all');
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [cancelId, setCancelId] = useState(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [customCancelReason, setCustomCancelReason] = useState("");
   const [cancelBooking] = useCancelBookingMutation();
   const [success, setSuccess] = useState(location.search.includes('success=true'));
 
+  const TOURIST_CANCEL_REASONS = [
+    "Rider is taking too long",
+    "Changed my mind",
+    "Booked by mistake",
+    "Other (Custom)"
+  ];
+
   const handleCancel = (id) => {
     setCancelId(id);
+    setCancelReason("");
+    setCustomCancelReason("");
   };
 
   const handleConfirmCancel = async () => {
     if (!cancelId) return;
+    const finalReason = cancelReason === "Other (Custom)" ? customCancelReason : cancelReason;
+    if (!finalReason) {
+      dispatch(pushToast({ type: 'error', title: 'Reason Required', message: 'Please provide a reason for cancellation.' }));
+      return;
+    }
     try {
-      await cancelBooking(cancelId).unwrap();
+      await cancelBooking({ id: cancelId, reason: finalReason }).unwrap();
       dispatch(pushToast({ type: 'success', title: 'Booking Cancelled', message: 'Your ride has been successfully cancelled.' }));
     } catch (err) {
       dispatch(pushToast({ type: 'error', title: 'Cancellation Failed', message: err?.data?.message || 'Could not cancel booking.' }));
@@ -548,11 +566,35 @@ export default function BookingsPage() {
       >
         <div className="space-y-4">
           <p className="text-ink-600 dark:text-ink-400 text-sm">
-            Are you sure you want to cancel this ride? This action cannot be undone.
+            Are you sure you want to cancel this ride? Please let us know why.
           </p>
+          <div className="space-y-2">
+            {TOURIST_CANCEL_REASONS.map((reason) => (
+              <label key={reason} className="flex items-center gap-2 text-sm text-ink-700 dark:text-ink-300 cursor-pointer">
+                <input 
+                  type="radio" 
+                  name="cancelReason" 
+                  value={reason} 
+                  checked={cancelReason === reason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-4 h-4 text-brand-600 border-ink-300 focus:ring-brand-500"
+                />
+                {reason}
+              </label>
+            ))}
+          </div>
+          {cancelReason === "Other (Custom)" && (
+            <textarea
+              className="w-full p-3 text-sm rounded-xl border border-border bg-surface-2 dark:bg-surface-3 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none transition-all resize-none"
+              placeholder="Tell us what happened..."
+              rows={3}
+              value={customCancelReason}
+              onChange={(e) => setCustomCancelReason(e.target.value)}
+            />
+          )}
           <div className="flex items-center gap-3 justify-end pt-4">
             <Button variant="secondary" onClick={() => setCancelId(null)}>Keep Ride</Button>
-            <Button variant="primary" className="!bg-red-500 hover:!bg-red-600 !border-red-500 !text-white" onClick={handleConfirmCancel}>Yes, Cancel</Button>
+            <Button variant="primary" className="!bg-red-500 hover:!bg-red-600 !border-red-500 !text-white" onClick={handleConfirmCancel} disabled={!cancelReason || (cancelReason === "Other (Custom)" && !customCancelReason.trim())}>Yes, Cancel</Button>
           </div>
         </div>
       </Modal>
