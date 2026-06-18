@@ -188,6 +188,14 @@ function TripDetails() {
 
   function handleNext() {
     if (!form.city || !form.date || !form.pickupAddress) return;
+    
+    if (form.date < getToday()) {
+      dispatch(pushToast({ type: 'error', title: 'Invalid date', message: 'You cannot book a ride for a past date.' }));
+      return;
+    }
+
+    const selRT = RIDE_TYPES.find(r => r.id === form.rideType);
+
     dispatch(updateDraft(form));
     dispatch(fetchSlots({ city: form.city, date: form.date, startTime: form.startTime, endTime: form.endTime, genderPreference: form.genderPreference }));
     dispatch(estimatePrice({ cityId: form.city, rideTypeId: form.rideType, hoursBooked: selRT?.hours, vehicleType: form.vehicleType }));

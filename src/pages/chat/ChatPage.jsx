@@ -218,27 +218,27 @@ export default function ChatPage() {
 
   return (
     <Modal open={true} onClose={handleClose} size="lg">
-      <div className="flex flex-col h-[70vh] bg-[var(--bg)]">
+      <div className="flex flex-col h-[70vh] bg-white dark:bg-ink-950">
         {/* Chat Header */}
-        <div className="sticky top-0 z-10 bg-[var(--bg)] border-b border-[var(--border)] p-4 flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-white dark:bg-ink-950 border-b border-ink-200 dark:border-ink-800 p-4 flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
               {recipientInfo?.name?.[0] || "?"}
             </div>
             <div>
-              <h3 className="font-semibold text-[var(--text)]">
+              <h3 className="font-semibold text-ink-900 dark:text-ink-100">
                 {recipientInfo?.name || "Chat"}
               </h3>
-              <p className="text-xs text-[var(--text-secondary)]">
+              <p className="text-xs text-ink-500 dark:text-ink-400">
                 {socketConnected ? "🟢 Active" : "🔌 Connecting..."}
               </p>
             </div>
           </div>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-[var(--surface)] rounded-lg transition"
+            className="p-2 hover:bg-ink-100 dark:hover:bg-ink-900 rounded-lg transition"
           >
-            <X className="w-5 h-5 text-[var(--text)]" />
+            <X className="w-5 h-5 text-ink-900 dark:text-ink-100" />
           </button>
         </div>
 
@@ -257,8 +257,8 @@ export default function ChatPage() {
               >
                 <div
                   className={`max-w-xs px-4 py-2.5 rounded-2xl text-sm break-words ${msg.senderId === currentUser.id
-                    ? "bg-[var(--primary)] text-white rounded-br-none"
-                    : "bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] rounded-bl-none"
+                    ? "bg-brand-500 text-white rounded-br-none"
+                    : "bg-ink-50 dark:bg-ink-900 text-ink-900 dark:text-ink-100 border border-ink-200 dark:border-ink-800 rounded-bl-none"
                     }`}
                 >
                   <p>{msg.message}</p>
@@ -286,7 +286,7 @@ export default function ChatPage() {
         </div>
 
         {/* Input Area */}
-        <div className="sticky bottom-0 bg-[var(--bg)] border-t border-[var(--border)] p-4">
+        <div className="sticky bottom-0 bg-white dark:bg-ink-950 border-t border-ink-200 dark:border-ink-800 p-4">
           <div className="flex gap-2">
             <Input
               value={text}
