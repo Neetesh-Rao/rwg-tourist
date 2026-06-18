@@ -66,6 +66,12 @@ function BookingDetail({ booking, onTrack, onClick, onCancel }) {
               <span className="font-mono font-bold text-green-700 dark:text-green-400 text-sm">Ride OTP: {booking.otp}</span>
             </div>
           )}
+          {booking.endOtp && booking.status === 'ongoing' && (
+            <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 rounded-xl px-3 py-2 border border-amber-200 dark:border-amber-800/40">
+              <Shield className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+              <span className="font-mono font-bold text-amber-700 dark:text-amber-400 text-sm">End Ride OTP: {booking.endOtp}</span>
+            </div>
+          )}
         </div>
 
         {booking.estimatedPrice && (
@@ -220,7 +226,7 @@ function VerticalStepper({ booking, onClose }) {
      {
       label: 'Ride Details',
       description: booking.status === 'completed' ? 'Your ride was successfully completed!' : (booking.bookingStatus === 'assigned') ? 'Your guide is ready. View details below.' : 'Ride details will appear here soon.',
-      content: (booking.bookingStatus === 'assigned') ? (
+      content: (booking.bookingStatus === 'assigned' || booking.bookingStatus === 'ongoing') ? (
         <div className="space-y-3 mt-3 bg-surface-2 dark:bg-surface-3 p-4 rounded-2xl border border-[var(--border)] overflow-hidden relative">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/30 flex flex-shrink-0 items-center justify-center">
@@ -297,9 +303,14 @@ function VerticalStepper({ booking, onClose }) {
             </div>
           </div>
 
-          {booking.otp && (
+          {booking.otp && booking.bookingStatus === 'assigned' && (
             <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 py-2.5 rounded-xl text-green-700 dark:text-green-400 text-sm border border-green-200 dark:border-green-800/40">
               <Shield className="w-4 h-4 flex-shrink-0" /> <span className="font-medium">Pick-up OTP:</span> <span className="font-mono font-bold tracking-widest">{booking.otp}</span>
+            </div>
+          )}
+          {booking.endOtp && booking.bookingStatus === 'ongoing' && (
+            <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 px-3 py-2.5 rounded-xl text-amber-700 dark:text-amber-400 text-sm border border-amber-200 dark:border-amber-800/40">
+              <Shield className="w-4 h-4 flex-shrink-0" /> <span className="font-medium">End Ride OTP:</span> <span className="font-mono font-bold tracking-widest">{booking.endOtp}</span>
             </div>
           )}
           <div className="flex gap-2">

@@ -21,6 +21,7 @@ export const normalizeBooking = (booking) => ({
   stops: booking?.stops || [],
   status: normalizeBookingStatus(booking?.bookingStatus || booking?.status),
   otp: booking?.rideOTP || booking?.otp || booking?.rideOtp || '',
+  endOtp: booking?.endRideOTP || booking?.endOtp || booking?.endRideOtp || '',
   rider: (typeof booking?.riderId === 'object' ? booking.riderId : null) || booking?.rider || booking?.guide || null,
   estimatedPrice: booking?.pricing ? {
     estimatedMin: booking.pricing?.estimatedRange?.min || 0,
