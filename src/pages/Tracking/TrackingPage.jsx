@@ -5,10 +5,12 @@ import PageWrapper from '@/shared/layout/PageWrapper/PageWrapper';
 import EmptyState from '@/shared/ui/EmptyState/EmptyState';
 import Button from '@/shared/ui/Button/Button';
 import LiveTracker from '@/shared/map/LiveTracker/LiveTracker';
+import { Shield } from 'lucide-react';
 
 export default function TrackingPage() {
   const loc = useLocation();
   const navigate = useNavigate();
+  const [showSOSModal, setShowSOSModal] = useState(false);
   const [triggerSOS, { isLoading: isSOSLoading }] = useTriggerSOSMutation();
   
   const { data: bookingsResponse } = useGetBookingsQuery();
@@ -33,9 +35,8 @@ export default function TrackingPage() {
     );
   }
 
-  const [showSOSModal, setShowSOSModal] = useState(false);
-
   const isOngoing = booking.status === 'ongoing' || booking.bookingStatus === 'ongoing';
+  const endOtp = booking.endRideOTP || booking.endOtp || '';
 
   const confirmSOS = () => {
     // Attempt to get exact live location from device
@@ -96,6 +97,16 @@ export default function TrackingPage() {
             {isSOSLoading ? 'Sending...' : 'SOS'}
           </button>
         </div>
+
+        {isOngoing && endOtp && (
+          <div className="mb-5 flex items-center gap-3 rounded-2xl border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-amber-700 dark:text-amber-400">
+            <Shield className="w-5 h-5 flex-shrink-0" />
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest">End Ride OTP</p>
+              <p className="font-mono text-2xl font-black tracking-widest">{endOtp}</p>
+            </div>
+          </div>
+        )}
         
         <LiveTracker booking={booking} height="450px" />
 

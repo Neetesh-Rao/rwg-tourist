@@ -60,7 +60,6 @@ function ConfigLoader({ children }) {
   return children;
 }
 
-import ToastContainer from '@/shared/components/ui/ToastContainer/ToastContainer';
 import SupportWidget from '@/shared/components/ui/SupportWidget/SupportWidget';
 
 function AppRoutes() {
@@ -87,7 +86,6 @@ function AppRoutes() {
       </Routes>
       <SocketManager />
       <RatingModal />
-      <ToastContainer />
       {isAuthenticated && <SupportWidget />}
     </>
   );
