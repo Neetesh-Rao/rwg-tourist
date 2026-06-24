@@ -24,8 +24,8 @@
     "vite": "^5.4.19"
   },
   "scripts": {
-    "start": "vite",
-    "dev": "vite",
+    "start": "node api.js && vite",
+    "dev": "node api.js && vite",
     "build": "vite build",
     "preview": "vite preview"
   },
