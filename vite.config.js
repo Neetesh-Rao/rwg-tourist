@@ -10,4 +10,13 @@ export default defineConfig({
   build: {
     outDir: 'build',
   },
+  plugins: [
+    {
+      name: 'force-exit-after-build',
+      apply: 'build',
+      closeBundle() {
+        process.exit(0);
+      },
+    },
+  ],
 });
