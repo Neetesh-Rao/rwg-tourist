@@ -110,7 +110,7 @@ const getRazorpayOrderData = (payload) => {
   const data = root?.data || {};
   const meta = data?.meta || root?.meta || {};
   const order = data?.order || root?.order || data || root;
-  const key = data?.key || root?.key || import.meta.env.RAZORPAY_KEY_ID;
+  const key = data?.key || root?.key || import.meta.env.VITE_RAZORPAY_KEY_ID;
   const orderId = order?.id || data?.orderId || root?.orderId;
   return {
     key,
