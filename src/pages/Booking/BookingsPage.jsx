@@ -84,7 +84,7 @@ function BookingDetail({ booking, onTrack, onClick, onCancel }) {
               {booking.status === 'completed' ? 'Total Amount' : 'Est. Amount'}:{' '}
               <span className="font-mono font-bold text-ink-800 dark:text-ink-200">{formatINR(booking.pricing.totalAmount)}</span>
             </span>
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); setShowPricingDetails(true); }}
               className={booking.status === 'completed'
                 ? "text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
@@ -99,22 +99,22 @@ function BookingDetail({ booking, onTrack, onClick, onCancel }) {
 
         {['assigned', 'confirmed', 'ongoing', 'pending', 'searching'].includes(booking.status) && (
           <div className="flex items-center gap-2 w-full pt-1">
-            <Button 
-              className="flex-1" 
-              variant="primary" 
-              size="sm" 
+            <Button
+              className="flex-1"
+              variant="primary"
+              size="sm"
               disabled={['pending', 'searching'].includes(booking.status)}
-              onClick={(e) => { e.stopPropagation(); onTrack(booking); }} 
-              icon={<Navigation2 className="w-3.5 h-3.5"/>}
+              onClick={(e) => { e.stopPropagation(); onTrack(booking); }}
+              icon={<Navigation2 className="w-3.5 h-3.5" />}
             >
               Track Ride
             </Button>
             {!['ongoing', 'completed', 'cancelled'].includes(booking.status) && (
-              <Button 
-                className="flex-1 !border-red-200 !text-red-500 hover:!bg-red-50 dark:!border-red-800/40 dark:!text-red-400 dark:hover:!bg-red-900/20 transition-colors" 
-                variant="secondary" 
-                size="sm" 
-                onClick={(e) => { e.stopPropagation(); onCancel(booking.id); }} 
+              <Button
+                className="flex-1 !border-red-200 !text-red-500 hover:!bg-red-50 dark:!border-red-800/40 dark:!text-red-400 dark:hover:!bg-red-900/20 transition-colors"
+                variant="secondary"
+                size="sm"
+                onClick={(e) => { e.stopPropagation(); onCancel(booking.id); }}
               >
                 Cancel Ride
               </Button>
@@ -197,7 +197,7 @@ function VerticalStepper({ booking, onClose }) {
   const navigate = useNavigate();
   const [showRiderDetails, setShowRiderDetails] = useState(false);
   const [viewImage, setViewImage] = useState(null);
-  
+
   let activeStep = 0;
   let isCancelled = booking.status === 'cancelled';
 
@@ -214,7 +214,7 @@ function VerticalStepper({ booking, onClose }) {
   }
 
   const steps = [
-    { 
+    {
       label: 'Booking & Payment',
       description: `Request placed for ${booking.city} on ${formatDate(booking.date)}. Paid ${formatINR(booking.estimatedPrice?.advanceAmount || 0)} advance.`,
     },
@@ -223,7 +223,7 @@ function VerticalStepper({ booking, onClose }) {
       description: isCancelled ? 'Your booking was cancelled.' : (booking.status === 'pending') ? 'Verifying details and getting things ready...' : 'Booking approved by admin.',
       isError: isCancelled
     },
-     {
+    {
       label: 'Ride Details',
       description: booking.status === 'completed' ? 'Your ride was successfully completed!' : (booking.bookingStatus === 'assigned') ? 'Your guide is ready. View details below.' : 'Ride details will appear here soon.',
       content: (booking.bookingStatus === 'assigned' || booking.bookingStatus === 'ongoing') ? (
@@ -238,7 +238,7 @@ function VerticalStepper({ booking, onClose }) {
             </div>
           </div>
 
-          <button 
+          <button
             onClick={() => setShowRiderDetails(!showRiderDetails)}
             className="w-full flex items-center justify-between py-2.5 mt-1 border-y border-[var(--border)] text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 hover:text-brand-500 transition-colors"
           >
@@ -250,7 +250,7 @@ function VerticalStepper({ booking, onClose }) {
             <div className="space-y-5">
               <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div 
+                  <div
                     className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-brand-100 to-brand-200 dark:from-brand-900/30 dark:to-brand-800/20 flex flex-shrink-0 items-center justify-center font-display text-xl font-bold text-brand-700 dark:text-brand-400 border border-[var(--border)] cursor-zoom-in active:scale-95 transition-transform"
                     onClick={() => booking.rider?.profileImage && setViewImage(booking.rider.profileImage)}
                   >
@@ -272,9 +272,9 @@ function VerticalStepper({ booking, onClose }) {
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <a 
+                  <a
                     href={`tel:${booking.rider?.phone?.replace(/[^\d+]/g, '') || ''}`}
-                    className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 flex flex-shrink-0 items-center justify-center text-green-600 dark:text-green-400 hover:text-green-700 transition-colors border border-green-200 dark:border-green-800/40 shadow-sm" 
+                    className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 flex flex-shrink-0 items-center justify-center text-green-600 dark:text-green-400 hover:text-green-700 transition-colors border border-green-200 dark:border-green-800/40 shadow-sm"
                     title="Call Guide"
                   >
                     <Phone className="w-4 h-4" />
@@ -314,41 +314,41 @@ function VerticalStepper({ booking, onClose }) {
             </div>
           )}
           <div className="flex gap-2">
-  
-  <Button
-    variant="secondary"
-    className="flex-1"
-    onClick={() => {
-      onClose();
 
-      navigate(`/chat/${booking._id}`, {
-        state: {
-          booking,
-          rider: booking.rider
-        }
-      });
-    }}
-    icon={<MessageCircle className="w-4 h-4" />}
-  >
-    Chat
-  </Button>
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={() => {
+                onClose();
 
-  <Button
-    variant="primary"
-    className="flex-1"
-    onClick={() => {
-      onClose();
+                navigate(`/chat/${booking._id}`, {
+                  state: {
+                    booking,
+                    rider: booking.rider
+                  }
+                });
+              }}
+              icon={<MessageCircle className="w-4 h-4" />}
+            >
+              Chat
+            </Button>
 
-      navigate('/tracking', {
-        state: { booking }
-      });
-    }}
-    icon={<Navigation2 className="w-4 h-4"/>}
-  >
-    Track Ride
-  </Button>
+            <Button
+              variant="primary"
+              className="flex-1"
+              onClick={() => {
+                onClose();
 
-</div>
+                navigate('/tracking', {
+                  state: { booking }
+                });
+              }}
+              icon={<Navigation2 className="w-4 h-4" />}
+            >
+              Track Ride
+            </Button>
+
+          </div>
         </div>
       ) : null
     },
@@ -356,7 +356,7 @@ function VerticalStepper({ booking, onClose }) {
       label: 'Ride Completed',
       description: booking.rider ? `Assigned to ${booking.rider.name}.` : (booking.status === 'searching') ? 'Matching you with a verified guide...' : 'Awaiting assignment.',
     },
-   
+
   ];
 
   return (
@@ -365,23 +365,22 @@ function VerticalStepper({ booking, onClose }) {
         const isCompleted = index < activeStep;
         const isActive = index === activeStep;
         const isError = step.isError;
-        
+
         return (
           <div key={index} className="flex gap-4">
             <div className="flex flex-col items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center border shrink-0 transition-all duration-300 ${
-                isCompleted ? 'bg-green-50 border-green-500 text-green-600 dark:bg-green-900/20 dark:text-green-400' :
-                isActive && !isError ? 'bg-brand-50 border-brand-500 text-brand-600 dark:bg-brand-900/20 dark:text-brand-400 ring-4 ring-brand-100 dark:ring-brand-900/30' :
-                isError ? 'bg-red-50 border-red-500 text-red-600 dark:bg-red-900/20 dark:text-red-400' :
-                'bg-[var(--surface)] border-ink-300 text-ink-400 dark:border-[var(--border)] dark:text-ink-500'
-              }`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center border shrink-0 transition-all duration-300 ${isCompleted ? 'bg-green-50 border-green-500 text-green-600 dark:bg-green-900/20 dark:text-green-400' :
+                  isActive && !isError ? 'bg-brand-50 border-brand-500 text-brand-600 dark:bg-brand-900/20 dark:text-brand-400 ring-4 ring-brand-100 dark:ring-brand-900/30' :
+                    isError ? 'bg-red-50 border-red-500 text-red-600 dark:bg-red-900/20 dark:text-red-400' :
+                      'bg-[var(--surface)] border-ink-300 text-ink-400 dark:border-[var(--border)] dark:text-ink-500'
+                }`}>
                 {isCompleted ? <Check className="w-4 h-4" /> : <span className="text-sm font-bold">{index + 1}</span>}
               </div>
               {index < steps.length - 1 && (
                 <div className={`w-0.5 h-full min-h-[32px] my-1 rounded transition-colors ${isCompleted ? 'bg-green-500' : 'bg-[var(--border-strong)]'}`} />
               )}
             </div>
-            
+
             <div className="pb-7 w-full flex-1 pt-1.5">
               <h3 className={`font-semibold text-sm sm:text-base leading-none mb-1.5 ${isError ? 'text-red-600 dark:text-red-400' : isActive ? 'text-brand-600 dark:text-brand-400 font-bold' : isCompleted ? 'text-ink-900 dark:text-ink-100' : 'text-ink-400 dark:text-ink-500'}`}>
                 {step.label}
@@ -396,7 +395,7 @@ function VerticalStepper({ booking, onClose }) {
           </div>
         )
       })}
-      
+
       <Modal
         open={!!viewImage}
         onClose={() => setViewImage(null)}
@@ -404,12 +403,12 @@ function VerticalStepper({ booking, onClose }) {
         className="!p-0 overflow-hidden bg-black/90"
       >
         <div className="relative w-full aspect-square sm:aspect-auto sm:h-[80vh] flex items-center justify-center p-2">
-          <img 
-            src={viewImage} 
-            alt="Enlarged view" 
+          <img
+            src={viewImage}
+            alt="Enlarged view"
             className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
           />
-          <button 
+          <button
             onClick={() => setViewImage(null)}
             className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
           >
@@ -549,11 +548,11 @@ export default function BookingsPage() {
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
             {filtered.map((b) => (
-              <BookingDetail 
-                key={b.id} 
-                booking={b} 
-                onTrack={(trackBooking) => navigate('/tracking', { state: { booking: trackBooking } })} 
-                onClick={() => setSelectedBooking(b)} 
+              <BookingDetail
+                key={b.id}
+                booking={b}
+                onTrack={(trackBooking) => navigate('/tracking', { state: { booking: trackBooking } })}
+                onClick={() => setSelectedBooking(b)}
                 onCancel={handleCancel}
               />
             ))}
@@ -582,10 +581,10 @@ export default function BookingsPage() {
           <div className="space-y-2">
             {TOURIST_CANCEL_REASONS.map((reason) => (
               <label key={reason} className="flex items-center gap-2 text-sm text-ink-700 dark:text-ink-300 cursor-pointer">
-                <input 
-                  type="radio" 
-                  name="cancelReason" 
-                  value={reason} 
+                <input
+                  type="radio"
+                  name="cancelReason"
+                  value={reason}
                   checked={cancelReason === reason}
                   onChange={(e) => setCancelReason(e.target.value)}
                   className="w-4 h-4 text-brand-600 border-ink-300 focus:ring-brand-500"
